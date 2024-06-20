@@ -10,28 +10,35 @@ const start = new Date()
 
 
 const makeRequest = async url => {
+    const time = Date.now()
     try {
         const response = await superagent.get(url)
             .timeout(10000)
-            .set('User-Agent', 'crawler-test')
+            .set('Accept-Encoding', 'gzip, deflate, br')
             .ok(() => true)
         console.error(`${url}: ${response.status}`)
-        return response.status
+        return { code: response.status, time: Date.now() - time }
     } catch (error) {
         console.error(`${url}: ${error.code} ${error.errno}`)
-        return error.code || 'error'
+        return { code: error.code || 'error', time: Date.now() - time }
     }
 }
 
 const { results, errors } = await PromisePool
     .for(urls)
-    .withConcurrency(50)
+    .withConcurrency(40)
     .process(makeRequest)
 
-const aggregates = results.reduce((agg, number) => {
-    return { ...agg, [number]: (agg[number] || 0) + 1 }
+const aggregates = results.reduce((agg, result) => {
+    return { ...agg, [result.code]: (agg[result.code] || 0) + 1 }
 }, {})
+const avgTime = results.reduce((agg, result) => {
+    return agg + result.time
+}, 0) / results.length
+const medianTime = results.map(r => r.time).sort()[Math.floor(results.length / 2)]
 
 console.log(`Total time: ${(Date.now() - start) / 1000}s`)
+console.log(`Average time: ${avgTime}`)
+console.log(`Median time: ${medianTime}`)
 
 console.log(aggregates)
