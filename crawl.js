@@ -2,11 +2,12 @@ import { readFileSync } from 'fs';
 import { PromisePool } from '@supercharge/promise-pool'
 import superagent from 'superagent'
 
+const CONCURRENCY = parseInt(process.env.CONCURRENCY || 20)
 const file = readFileSync('../jobanni/data/top-1000.txt', 'utf8')
-
 const urls = file.split(/\n/)
-
 const start = new Date()
+
+console.log(`Starting crawl with ${CONCURRENCY} concurrency`)
 
 
 const makeRequest = async url => {
@@ -26,7 +27,7 @@ const makeRequest = async url => {
 
 const { results, errors } = await PromisePool
     .for(urls)
-    .withConcurrency(40)
+    .withConcurrency(CONCURRENCY)
     .process(makeRequest)
 
 const aggregates = results.reduce((agg, result) => {
