@@ -2,3 +2,4 @@ node_modules/
 resolvers.txt
 __pycache__/
 tmp/
+crawl
