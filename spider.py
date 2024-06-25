@@ -4,7 +4,7 @@ import os
 
 class MainSpider(scrapy.Spider):
     name = 'main'
-    start_urls = [l.strip() for l in open('../jobanni/data/top-1000.txt').readlines()]
+    start_urls = [l.strip() for l in open('data/top-1000.txt').readlines()]
 
     custom_settings = {
         'REQUEST_FINGERPRINTER_IMPLEMENTATION': '2.7',

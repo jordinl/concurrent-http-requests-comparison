@@ -3,7 +3,7 @@ import { PromisePool } from '@supercharge/promise-pool'
 import superagent from 'superagent'
 
 const CONCURRENCY = parseInt(process.env.CONCURRENCY || 20)
-const file = readFileSync('../jobanni/data/top-1000.txt', 'utf8')
+const file = readFileSync('data/top-1000.txt', 'utf8')
 const urls = file.split(/\n/)
 const start = new Date()
 

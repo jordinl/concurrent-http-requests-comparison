@@ -72,7 +72,7 @@ func main() {
         fmt.Println(r.Request.URL, code)
     })
 
-    file, err := os.Open("../jobanni/data/top-1000.txt")
+    file, err := os.Open("data/top-1000.txt")
     if err != nil {
         panic(err)
     }
