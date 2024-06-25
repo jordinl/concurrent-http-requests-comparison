@@ -1,5 +1,6 @@
 import scrapy
 from scrapy.spidermiddlewares.httperror import HttpError
+import os
 
 class MainSpider(scrapy.Spider):
     name = 'main'
@@ -9,7 +10,7 @@ class MainSpider(scrapy.Spider):
         'REQUEST_FINGERPRINTER_IMPLEMENTATION': '2.7',
         'USER_AGENT': 'crawler-test',
         'ROBOTSTXT_OBEY': False,
-        'CONCURRENT_REQUESTS': 40,
+        'CONCURRENT_REQUESTS': os.environ.get('CONCURRENCY', 20),
         'RETRY_ENABLED': False,
         'TELNETCONSOLE_ENABLED': False,
         'DOWNLOAD_TIMEOUT': 10,
@@ -18,7 +19,7 @@ class MainSpider(scrapy.Spider):
         'REDIRECT_MAX_TIMES': 5,
         'FEED_FORMAT': 'json',
         'FEED_URI': 'tmp/output.json',
-        'REACTOR_THREADPOOL_MAXSIZE': 40
+        'REACTOR_THREADPOOL_MAXSIZE': os.environ.get('CONCURRENCY', 20)
     }
 
     def start_requests(self):
