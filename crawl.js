@@ -15,6 +15,7 @@ const makeRequest = async url => {
     try {
         const response = await superagent.get(url)
             .timeout(10000)
+            .set('User-Agent', 'crawler-test')
             .set('Accept-Encoding', 'gzip, deflate, br')
             .ok(() => true)
         console.error(`${url}: ${response.status}`)
