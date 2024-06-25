@@ -104,4 +104,12 @@ func main() {
     for code, count := range aggregates {
         fmt.Printf("%s: %d\n", code, count)
     }
+
+    total := 0
+
+    for _, result := range aggregates {
+        total += result
+    }
+
+    fmt.Printf("Total URLs: %d\n", total)
 }
