@@ -29,11 +29,25 @@ func getConcurrency() int {
     return intVal
 }
 
+func getRequestTimeout() int {
+    value, exists := os.LookupEnv("REQUEST_TIMEOUT")
+    if !exists {
+        return 10
+    }
+    intVal, err := strconv.Atoi(value)
+    if err != nil {
+        return 10
+    }
+    return intVal
+}
+
 func main() {
     CONCURRENCY := getConcurrency()
+    REQUEST_TIMEOUT := getRequestTimeout()
     results := []Result{}
 
     fmt.Printf("Concurrency: %d\n", CONCURRENCY)
+    fmt.Printf("Request timeout: %d\n", REQUEST_TIMEOUT)
 
 
 	// Instantiate default collector
@@ -43,6 +57,8 @@ func main() {
 	    colly.UserAgent("crawler-test"),
 	    colly.IgnoreRobotsTxt(),
     )
+
+    c.SetRequestTimeout(time.Duration(int(time.Second) * REQUEST_TIMEOUT))
 
 	c.Limit(&colly.LimitRule{DomainGlob: "*", Parallelism: CONCURRENCY})
 
