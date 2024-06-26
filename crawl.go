@@ -44,11 +44,16 @@ func getRequestTimeout() int {
 func main() {
     CONCURRENCY := getConcurrency()
     REQUEST_TIMEOUT := getRequestTimeout()
+    FILE_PATH := "data/top-1000.txt"
+    if len(os.Args) > 1 {
+        FILE_PATH = os.Args[1]
+    }
     results := []Result{}
 
-    fmt.Printf("Concurrency: %d\n", CONCURRENCY)
-    fmt.Printf("Request timeout: %d\n", REQUEST_TIMEOUT)
-
+    fmt.Printf(" Starting crawl:\n")
+    fmt.Printf(" * Concurrency: %d\n", CONCURRENCY)
+    fmt.Printf(" * Request timeout: %d\n", REQUEST_TIMEOUT)
+    fmt.Printf(" * File: %s\n\n", FILE_PATH)
 
 	// Instantiate default collector
 	c := colly.NewCollector(
@@ -88,7 +93,7 @@ func main() {
         fmt.Println(r.Request.URL, code)
     })
 
-    file, err := os.Open("data/top-1000.txt")
+    file, err := os.Open(FILE_PATH)
     if err != nil {
         panic(err)
     }

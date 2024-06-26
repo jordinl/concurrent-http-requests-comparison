@@ -3,8 +3,9 @@ import {PromisePool} from '@supercharge/promise-pool'
 import got from 'got'
 
 const CONCURRENCY = parseInt(process.env.CONCURRENCY || 20)
-const REQUEST_TIMEOUT = parseInt(process.env.REQUEST_TIMEOUT || 10) * 1000
-const file = readFileSync('data/top-1000.txt', 'utf8')
+const REQUEST_TIMEOUT = parseInt(process.env.REQUEST_TIMEOUT || 10)
+const filePath = process.argv[2] || 'data/top-1000.txt'
+const file = readFileSync(filePath, 'utf8')
 const urls = file.split(/\n/)
 const start = new Date()
 
@@ -15,7 +16,7 @@ const requestOptions = {
         'Accept-Encoding': 'gzip, deflate, br'
     },
     timeout: {
-        request: REQUEST_TIMEOUT
+        request: REQUEST_TIMEOUT * 1000
     },
     maxRedirects: 5,
     retry: {
@@ -37,7 +38,7 @@ const makeRequest = async url => {
     }
 }
 
-console.log(`Starting crawl with ${CONCURRENCY} concurrency`)
+console.log(`Starting crawl\n * Concurrency: ${CONCURRENCY}\n * Timeout: ${REQUEST_TIMEOUT}s\n * File: ${filePath}\n`)
 
 const {results, errors} = await PromisePool
     .for(urls)
