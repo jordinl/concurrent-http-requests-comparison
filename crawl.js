@@ -1,43 +1,54 @@
-import { readFileSync } from 'fs';
-import { PromisePool } from '@supercharge/promise-pool'
-import superagent from 'superagent'
+import {readFileSync} from 'fs';
+import {PromisePool} from '@supercharge/promise-pool'
+import got from 'got'
 
 const CONCURRENCY = parseInt(process.env.CONCURRENCY || 20)
+const REQUEST_TIMEOUT = parseInt(process.env.REQUEST_TIMEOUT || 10) * 1000
 const file = readFileSync('data/top-1000.txt', 'utf8')
 const urls = file.split(/\n/)
 const start = new Date()
 
-console.log(`Starting crawl with ${CONCURRENCY} concurrency`)
+const requestOptions = {
+    throwHttpErrors: false,
+    headers: {
+        'User-Agent': 'crawler-test',
+        'Accept-Encoding': 'gzip, deflate, br'
+    },
+    timeout: {
+        request: REQUEST_TIMEOUT
+    },
+    maxRedirects: 5,
+    retry: {
+        limit: 0
 
-
-const makeRequest = async url => {
-    const time = Date.now()
-    try {
-        const response = await superagent.get(url)
-            .timeout(10000)
-            .set('User-Agent', 'crawler-test')
-            .set('Accept-Encoding', 'gzip, deflate, br')
-            .ok(() => true)
-        console.error(`${url}: ${response.status}`)
-        return { code: response.status, time: Date.now() - time }
-    } catch (error) {
-        console.error(`${url}: ${error.code} ${error.errno}`)
-        return { code: error.code || 'error', time: Date.now() - time }
     }
 }
 
-const { results, errors } = await PromisePool
+const makeRequest = async url => {
+    try {
+        const {statusCode, timings} = await got(url, requestOptions)
+        const {phases} = timings
+        console.log(`${url}: ${statusCode} -- ${phases.total}ms`)
+        return {code: statusCode, time: phases.total}
+    } catch (error) {
+        const {phases} = error.timings
+        console.error(`${url}: ${error.code} -- ${phases.total}ms`)
+        return {code: error.code || 'error', time: phases.total}
+    }
+}
+
+console.log(`Starting crawl with ${CONCURRENCY} concurrency`)
+
+const {results, errors} = await PromisePool
     .for(urls)
     .withConcurrency(CONCURRENCY)
     .process(makeRequest)
 
 const aggregates = results.reduce((agg, result) => {
-    return { ...agg, [result.code]: (agg[result.code] || 0) + 1 }
+    return {...agg, [result.code]: (agg[result.code] || 0) + 1}
 }, {})
-const avgTime = results.reduce((agg, result) => {
-    return agg + result.time
-}, 0) / results.length
-const medianTime = results.map(r => r.time).sort()[Math.floor(results.length / 2)]
+const avgTime = results.reduce((agg, {time}) => agg + time, 0) / results.length
+const medianTime = results.map(({time}) => time).sort()[Math.floor(results.length / 2)]
 
 console.log(`Total time: ${(Date.now() - start) / 1000}s`)
 console.log(`Average time: ${avgTime}`)
