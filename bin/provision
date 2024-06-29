@@ -31,7 +31,7 @@ ssh -t "$credentials" bash -i << EOF
     cd ~/app/node-fetch
     npm install
 
-    cd ~/app
+    cd ~/app/gocrawler
     go mod download
     go build crawl.go
 EOF
