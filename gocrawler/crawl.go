@@ -32,11 +32,11 @@ func getConcurrency() int {
 func getRequestTimeout() int {
     value, exists := os.LookupEnv("REQUEST_TIMEOUT")
     if !exists {
-        return 10
+        return 5
     }
     intVal, err := strconv.Atoi(value)
     if err != nil {
-        return 10
+        return 5
     }
     return intVal
 }
