@@ -34,4 +34,6 @@ ssh -t "$credentials" bash -i << EOF
     cd ~/app/gocrawler
     go mod download
     go build crawl.go
+
+    go build -C gohttp -v crawl.go
 EOF
