@@ -25,15 +25,13 @@ git push --all
 ssh -t "$credentials" bash -i << EOF
     nvm install 20
 
-    cd ~/app/superagent
-    npm install
+    cd app
 
-    cd ~/app/node-fetch
-    npm install
+    npm install --prefix node-fetch
+    npm install --prefix superagent
 
-    cd ~/app/gocrawler
-    go mod download
-    go build crawl.go
+    go mod download -C gocrawler
+    go build -C gocrawler -v crawl.go
 
     go build -C gohttp -v crawl.go
 EOF
