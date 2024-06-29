@@ -30,8 +30,8 @@ ssh -t "$credentials" bash -i << EOF
     npm install --prefix node-fetch
     npm install --prefix superagent
 
-    go mod download -C gocrawler
-    go build -C gocrawler -v crawl.go
+    go mod download -C gocolly
+    go build -C gocolly -v crawl.go
 
     go build -C gohttp -v crawl.go
 EOF
