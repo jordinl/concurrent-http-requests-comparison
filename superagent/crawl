@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { readFileSync } from 'fs';
 import { PromisePool } from '@supercharge/promise-pool'
 import superagent from 'superagent'

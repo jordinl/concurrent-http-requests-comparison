@@ -24,8 +24,11 @@ git push --all
 
 ssh -t "$credentials" bash -i << EOF
     nvm install 20
-    cd app
+
+    cd ~/app/superagent
     npm install
+
+    cd ~/app
     go mod download
     go build crawl.go
 EOF
