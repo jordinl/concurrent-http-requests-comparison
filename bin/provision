@@ -28,6 +28,9 @@ ssh -t "$credentials" bash -i << EOF
     cd ~/app/superagent
     npm install
 
+    cd ~/app/node-fetch
+    npm install
+
     cd ~/app
     go mod download
     go build crawl.go
