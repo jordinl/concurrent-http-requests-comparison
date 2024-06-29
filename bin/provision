@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+
+credentials=$1
+
+ssh -T "$credentials" << EOF
+    arch=\$(dpkg --print-architecture)
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+    curl -O -L "https://go.dev/dl/go1.22.4.linux-\${arch}.tar.gz"
+    sudo tar -C /usr/local -xzf go1.22.4.linux-\${arch}.tar.gz
+    echo 'export PATH=\$PATH:/usr/local/go/bin' >> ~/.bashrc
+    echo 'UV_THREADPOOL_SIZE=20' >> ~/.bashrc
+
+    mkdir app
+    cd app
+
+    git config --global init.defaultBranch main
+    git config --global receive.denyCurrentBranch updateInstead
+    git init
+EOF
+
+git remote remove server
+git remote add server "$credentials:app"
+git push --all
+
+ssh -t "$credentials" bash -i << EOF
+    nvm install 20
+    cd app
+    npm install
+    go mod download
+    go build crawl.go
+EOF
