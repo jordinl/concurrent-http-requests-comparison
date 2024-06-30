@@ -1,0 +1,22 @@
+{
+  "version": "3",
+  "packages": {
+    "specifiers": {
+      "npm:@supercharge/promise-pool@^3.2.0": "npm:@supercharge/promise-pool@3.2.0"
+    },
+    "npm": {
+      "@supercharge/promise-pool@3.2.0": {
+        "integrity": "sha512-pj0cAALblTZBPtMltWOlZTQSLT07jIaFNeM8TWoJD1cQMgDB9mcMlVMoetiB35OzNJpqQ2b+QEtwiR9f20mADg==",
+        "dependencies": {}
+      }
+    }
+  },
+  "remote": {},
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@supercharge/promise-pool@^3.2.0"
+      ]
+    }
+  }
+}
