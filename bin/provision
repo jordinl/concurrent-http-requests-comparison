@@ -12,8 +12,7 @@ ssh -T "$credentials" << EOF
     curl -O -L "https://go.dev/dl/go1.22.4.linux-\${arch}.tar.gz"
     sudo tar -C /usr/local -xzf go1.22.4.linux-\${arch}.tar.gz
     echo 'export PATH=\$PATH:/usr/local/go/bin' >> ~/.bashrc
-    echo 'export DENO_INSTALL="$HOME/.deno"' >> ~/.bashrc
-    echo 'export PATH="$DENO_INSTALL/bin:$PATH"' >> ~/.bashrc
+    echo 'export PATH=\$PATH:\$HOME/.deno/bin' >> ~/.bashrc
 
     echo 'UV_THREADPOOL_SIZE=20' >> ~/.bashrc
 
