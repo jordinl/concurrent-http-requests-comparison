@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-deno run --allow-net --allow-read deno-fetch/crawl.js
+deno run --allow-net --allow-read --allow-env deno-fetch/crawl.js "$@"
