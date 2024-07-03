@@ -4,13 +4,13 @@ credentials=$1
 
 ssh -T "$credentials" << EOF
     sudo apt update
-    sudo apt install -y  p7zip-full
+    sudo apt install -y p7zip git
 
     arch=\$(dpkg --print-architecture)
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
     curl -fsSL https://deno.land/install.sh | sh
-    curl -O -L "https://go.dev/dl/go1.22.4.linux-\${arch}.tar.gz"
-    sudo tar -C /usr/local -xzf go1.22.4.linux-\${arch}.tar.gz
+    curl -L "https://go.dev/dl/go1.22.5.linux-\${arch}.tar.gz" -o /tmp/go.tar.gz
+    sudo tar -C /usr/local -xzf /tmp/go.tar.gz
     echo 'export PATH=\$PATH:/usr/local/go/bin' >> ~/.bashrc
     echo 'export PATH=\$PATH:\$HOME/.deno/bin' >> ~/.bashrc
 
