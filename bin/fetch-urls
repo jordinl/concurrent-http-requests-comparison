@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+rm -rf data/*
+mkdir -p data
+curl https://www.domcop.com/files/top/top10milliondomains.csv.zip -o data/urls.csv.zip
+unzip -p data/urls.csv.zip > data/urls.csv
+cat data/urls.csv | tail -n +2 |  awk -F '","' '{print "https://"$2}' > data/url.txt

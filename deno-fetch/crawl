@@ -5,7 +5,7 @@ import { PromisePool } from '@supercharge/promise-pool'
 
 const CONCURRENCY = parseInt(Deno.env.get('CONCURRENCY') || 10)
 const REQUEST_TIMEOUT = parseInt(Deno.env.get('REQUEST_TIMEOUT') || 5)
-const filePath = Deno.args[0] || 'data/top-1000.txt'
+const filePath = Deno.args[0] || 'data/urls.txt'
 const file = readFileSync(filePath, 'utf8')
 const urls = file.split(/\n/)
 const start = new Date()

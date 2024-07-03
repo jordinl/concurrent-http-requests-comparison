@@ -44,7 +44,7 @@ func getRequestTimeout() int {
 func main() {
     CONCURRENCY := getConcurrency()
     REQUEST_TIMEOUT := getRequestTimeout()
-    FILE_PATH := "data/top-1000.txt"
+    FILE_PATH := "data/urls.txt"
     if len(os.Args) > 1 {
         FILE_PATH = os.Args[1]
     }

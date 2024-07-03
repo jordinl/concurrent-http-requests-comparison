@@ -3,3 +3,4 @@ resolvers.txt
 __pycache__/
 tmp/
 go*/crawl
+data/

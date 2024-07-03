@@ -35,7 +35,7 @@ func getEnv(key string, fallback int) int {
 }
 
 func readUrls() ([]string) {
-    filePath := "data/top-1000.txt"
+    filePath := "data/urls.txt"
     if len(os.Args) > 1 {
         filePath = os.Args[1]
     }
