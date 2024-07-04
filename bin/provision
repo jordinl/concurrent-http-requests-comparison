@@ -2,7 +2,7 @@
 
 credentials=$1
 
-ssh -T "$credentials" << EOF
+ssh -T -o StrictHostKeyChecking=no "$credentials" << EOF
     sudo apt update
     sudo apt install -y p7zip git
 
