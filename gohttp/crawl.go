@@ -22,6 +22,11 @@ type aggregate struct {
     count int
 }
 
+var Headers = map[string]string{
+    "User-Agent":      "crawler-test",
+    "Accept-Encoding": "gzip, deflate, br",
+}
+
 func getEnv(key string, fallback int) int {
     value, exists := os.LookupEnv(key)
     if !exists {
@@ -32,33 +37,6 @@ func getEnv(key string, fallback int) int {
         return fallback
     }
     return intVal
-}
-
-func readUrls() ([]string) {
-    filePath := "data/urls.txt"
-    if len(os.Args) > 1 {
-        filePath = os.Args[1]
-    }
-
-    fmt.Printf(" * File: %s\n\n", filePath)
-
-    file, err := os.Open(filePath)
-    if err != nil {
-        panic(err)
-    }
-    defer file.Close()
-
-    var urls []string
-    scanner := bufio.NewScanner(file)
-    for scanner.Scan() {
-        urls = append(urls, scanner.Text())
-    }
-
-    if err := scanner.Err(); err != nil {
-        panic(err)
-    }
-
-    return urls
 }
 
 func makeRequest(url string, headers map[string]string, timeout time.Duration) result {
@@ -92,34 +70,44 @@ func makeRequest(url string, headers map[string]string, timeout time.Duration) r
 func main() {
     concurrency := getEnv("CONCURRENCY", 10)
     requestTimeout := getEnv("REQUEST_TIMEOUT", 5)
+    urlLimit := getEnv("LIMIT", 1000)
 
-    headers := map[string]string{
-        "User-Agent":      "crawler-test",
-        "Accept-Encoding": "gzip, deflate, br",
+    file, err := os.Open("data/urls.txt")
+    if err != nil {
+        panic(err)
     }
+    defer file.Close()
 
     fmt.Printf(" Starting crawl:\n")
-    fmt.Printf(" * Concurrency: %d\n", concurrency)
-    fmt.Printf(" * Request timeout: %d\n", requestTimeout)
+    fmt.Printf(" * CONCURRENCY: %d\n", concurrency)
+    fmt.Printf(" * REQUEST_TIMEOUT: %d\n", requestTimeout)
+    fmt.Printf(" * LIMIT: %d\n", urlLimit)
 
-    urls := readUrls()
+    urlScanner := bufio.NewScanner(file)
+
+    count := 0
 
     start := time.Now()
 
     semaphoreChan := make(chan struct{}, concurrency)
-    resultsCh := make(chan result, len(urls))
+    resultsCh := make(chan result, urlLimit)
 
     var wg sync.WaitGroup
-    for _, url := range urls {
+    for urlScanner.Scan() {
+        url := urlScanner.Text()
         semaphoreChan <- struct{}{}
         wg.Add(1)
         go func(url string) {
             defer wg.Done()
-            result := makeRequest(url, headers, time.Duration(requestTimeout) * time.Second)
+            result := makeRequest(url, Headers, time.Duration(requestTimeout) * time.Second)
             resultsCh <- result
             fmt.Println(url, result.code, result.duration)
             <-semaphoreChan
         }(url)
+        count++
+        if count >= urlLimit {
+            break
+        }
     }
 
     wg.Wait()

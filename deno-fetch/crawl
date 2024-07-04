@@ -1,23 +1,40 @@
 #!/usr/bin/env -S deno run --allow-env --allow-read --allow-net
 
-import { readFileSync } from 'node:fs';
+import { TextLineStream } from "jsr:@std/streams@0.223.0/text-line-stream";
 import { PromisePool } from '@supercharge/promise-pool'
 
 const CONCURRENCY = parseInt(Deno.env.get('CONCURRENCY') || 10)
 const REQUEST_TIMEOUT = parseInt(Deno.env.get('REQUEST_TIMEOUT') || 5)
-const filePath = Deno.args[0] || 'data/urls.txt'
-const file = readFileSync(filePath, 'utf8')
-const urls = file.split(/\n/)
+const LIMIT = parseInt(Deno.env.get('LIMIT') || 1000)
+
 const start = new Date()
 
-console.log(`Starting crawl with ${CONCURRENCY} concurrency`)
-console.log(`Request timeout: ${REQUEST_TIMEOUT}s`)
-console.log(`Reading URLs from ${filePath}`)
+console.log(`Starting crawl:`)
+console.log(` * CONCURRENCY: ${CONCURRENCY}`)
+console.log(` * REQUEST_TIMEOUT: ${REQUEST_TIMEOUT}`)
+console.log(` * LIMIT: ${LIMIT}`)
 
 const headers = {
     'User-Agent': 'crawler-test',
     'Accept-Encoding': 'gzip, deflate, br'
 }
+
+const iterator = (async function* () {
+    const file = await Deno.open('data/urls.txt', { read: true })
+
+    const readable = file.readable
+        .pipeThrough(new TextDecoderStream()) // decode Uint8Array to string
+        .pipeThrough(new TextLineStream()) // split string line by line
+
+    let count = 0
+    for await (const line of readable) {
+        yield line
+        count++
+        if (count >= LIMIT) {
+            return
+        }
+    }
+})();
 
 const makeRequest = async url => {
     const startTime = Date.now()
@@ -40,7 +57,7 @@ const makeRequest = async url => {
 }
 
 const { results, errors } = await PromisePool
-    .for(urls)
+    .for(iterator)
     .withConcurrency(CONCURRENCY)
     .process(makeRequest)
 
