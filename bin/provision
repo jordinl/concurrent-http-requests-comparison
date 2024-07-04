@@ -4,7 +4,7 @@ credentials=$1
 
 ssh -T -o StrictHostKeyChecking=no "$credentials" << EOF
     sudo apt update
-    sudo apt install -y p7zip git
+    sudo apt install -y p7zip git build-essential pkg-config libssl-dev
 
     arch=\$(dpkg --print-architecture)
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
@@ -12,6 +12,8 @@ ssh -T -o StrictHostKeyChecking=no "$credentials" << EOF
     curl -L "https://go.dev/dl/go1.22.5.linux-\${arch}.tar.gz" -o /tmp/go.tar.gz
     sudo tar -C /usr/local -xzf /tmp/go.tar.gz
     rm /tmp/go.tar.gz
+
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
     echo 'export PATH=\$PATH:/usr/local/go/bin' >> ~/.bashrc
     echo 'export PATH=\$PATH:\$HOME/.deno/bin' >> ~/.bashrc
@@ -42,4 +44,6 @@ ssh -t "$credentials" bash -i << EOF
     go build -C gocolly -v crawl.go
 
     go build -C gohttp -v crawl.go
+
+    rustc rust-reqwest/crawl.rs --out-dir rust-reqwest
 EOF

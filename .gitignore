@@ -2,5 +2,6 @@ node_modules/
 resolvers.txt
 __pycache__/
 tmp/
-go*/crawl
+*/crawl
 data/
+*/target

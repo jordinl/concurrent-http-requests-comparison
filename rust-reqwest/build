@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+cargo build -r --manifest-path rust-reqwest/Cargo.toml
+cp rust-reqwest/target/release/crawl rust-reqwest/crawl
