@@ -89,20 +89,20 @@ func main() {
 
     start := time.Now()
 
-    semaphoreChan := make(chan struct{}, concurrency)
+    semaphore := make(chan struct{}, concurrency)
     resultsCh := make(chan result, urlLimit)
 
     var wg sync.WaitGroup
     for urlScanner.Scan() {
         url := urlScanner.Text()
-        semaphoreChan <- struct{}{}
+        semaphore <- struct{}{}
         wg.Add(1)
         go func(url string) {
             defer wg.Done()
+            defer func() { <-semaphore }()
             result := makeRequest(url, Headers, time.Duration(requestTimeout) * time.Second)
             resultsCh <- result
             fmt.Println(url, result.code, result.duration)
-            <-semaphoreChan
         }(url)
         count++
         if count >= urlLimit {
@@ -112,7 +112,7 @@ func main() {
 
     wg.Wait()
     close(resultsCh)
-    close(semaphoreChan)
+    close(semaphore)
 
     var results []result
     for res := range resultsCh {
