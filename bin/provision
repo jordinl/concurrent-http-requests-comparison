@@ -30,20 +30,9 @@ EOF
 
 git remote remove server
 git remote add server "$credentials:app"
-git push --all
 
 ssh -t "$credentials" bash -i << EOF
     nvm install 20
-
-    cd app
-
-    npm install --prefix node-fetch
-    npm install --prefix superagent
-
-    go mod download -C gocolly
-    go build -C gocolly -v crawl.go
-
-    go build -C gohttp -v crawl.go
-
-    rustc rust-reqwest/crawl.rs --out-dir rust-reqwest
 EOF
+
+./bin/deploy

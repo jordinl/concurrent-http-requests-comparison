@@ -1,3 +1,5 @@
 #!/usr/bin/env sh
 
-ssh -t "$(git remote get-url server | cut -d ':' -f1)" "cd app; bash --login"
+cmd=$1
+
+ssh -t "$(git remote get-url server | cut -d ':' -f1)" "cd app; bash -i $cmd"

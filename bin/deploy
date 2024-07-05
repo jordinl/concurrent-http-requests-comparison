@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+git push --all --force
+
+./bin/ssh "./bin/build-all"
