@@ -36,3 +36,5 @@ ssh -t "$credentials" bash -i << EOF
 EOF
 
 ./bin/deploy
+
+bin/ssh "bin/fetch-urls"
