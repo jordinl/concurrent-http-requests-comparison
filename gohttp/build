@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+go build -C gohttp -v crawl.go
