@@ -1,12 +1,9 @@
-#!/usr/bin/env -S deno run --allow-env --allow-read --allow-net
+import fs from 'fs';
+import {PromisePool} from '@supercharge/promise-pool'
 
-import { TextLineStream } from "jsr:@std/streams@0.223.0/text-line-stream";
-import { PromisePool } from '@supercharge/promise-pool'
-
-const CONCURRENCY = parseInt(Deno.env.get('CONCURRENCY') || 10)
-const REQUEST_TIMEOUT = parseInt(Deno.env.get('REQUEST_TIMEOUT') || 5)
-const LIMIT = parseInt(Deno.env.get('LIMIT') || 1000)
-
+const CONCURRENCY = parseInt(process.env.CONCURRENCY || 10)
+const REQUEST_TIMEOUT = parseInt(process.env.REQUEST_TIMEOUT || 5)
+const LIMIT = parseInt(process.env.LIMIT || 1000)
 const start = new Date()
 
 console.log(`Starting crawl:`)
@@ -20,18 +17,19 @@ const headers = {
 }
 
 const iterator = (async function* () {
-    const file = await Deno.open('data/urls.txt', { read: true })
-
-    const readable = file.readable
-        .pipeThrough(new TextDecoderStream()) // decode Uint8Array to string
-        .pipeThrough(new TextLineStream()) // split string line by line
+    const readableStream = fs.createReadStream('/mnt/appdata/urls.txt', {encoding: 'utf8'})
 
     let count = 0
-    for await (const line of readable) {
-        yield line
-        count++
-        if (count >= LIMIT) {
-            return
+    let last = ''
+    for await (const chunk of readableStream) {
+        const lines = (last + chunk).split('\n')
+        last = lines.pop()
+        for (const line of lines) {
+            yield line
+            count++
+            if (count >= LIMIT) {
+                return
+            }
         }
     }
 })();
@@ -40,29 +38,25 @@ const makeRequest = async url => {
     const startTime = Date.now()
 
     try {
-        const controller = new AbortController();
-        const signal = controller.signal;
-        const timeout = setTimeout(() => controller.abort('TIMEOUT_ERROR'), 5000);
-        const response = await fetch(url, { headers, signal })
-        clearTimeout(timeout);
+        const response = await fetch(url, {headers, signal: AbortSignal.timeout(REQUEST_TIMEOUT * 1000)})
         const time = Date.now() - startTime
         console.log(`${url}: ${response.status} -- ${time}ms`)
-        return { code: response.status, time }
+        return {code: response.status, time}
     } catch (error) {
         const time = Date.now() - startTime
-        const code = error.name || error
+        const code = error.cause?.code || error.name
         console.error(`${url}: ${code} -- ${time}ms`)
-        return { code, time }
+        return {code, time}
     }
 }
 
-const { results, errors } = await PromisePool
+const {results, errors} = await PromisePool
     .for(iterator)
     .withConcurrency(CONCURRENCY)
     .process(makeRequest)
 
 const aggregates = results.reduce((agg, result) => {
-    return { ...agg, [result.code]: (agg[result.code] || 0) + 1 }
+    return {...agg, [result.code]: (agg[result.code] || 0) + 1}
 }, {})
 const avgTime = results.reduce((agg, result) => {
     return agg + result.time

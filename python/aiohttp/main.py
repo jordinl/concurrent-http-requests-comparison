@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import sys
 import asyncio
@@ -8,14 +6,21 @@ from time import time
 
 CONCURRENCY = int(os.environ.get('CONCURRENCY', 10))
 REQUEST_TIMEOUT = int(os.environ.get('REQUEST_TIMEOUT', 5))
-file_path = sys.argv[1] if len(sys.argv) > 1 else 'data/urls.txt'
+URL_LIMIT = int(os.environ.get('LIMIT', 1000))
 
-with open(file_path, 'r') as file:
-    urls = file.read().splitlines()
+def file_reader():
+    count = 0
+    with open('/mnt/appdata/urls.txt', 'r') as file:
+        for line in file:
+            yield line.strip()
+            count += 1
+            if count >= URL_LIMIT:
+                break
 
-print(f"Starting crawl with {CONCURRENCY} concurrency")
-print(f"Request timeout: {REQUEST_TIMEOUT}s")
-print(f"Reading URLs from {file_path}")
+print(f"Starting crawl")
+print(f" * CONCURRENCY: {CONCURRENCY}")
+print(f" * REQUEST_TIMEOUT: {REQUEST_TIMEOUT}s")
+print(f" * URL_LIMIT: {URL_LIMIT}")
 
 headers = {
     'User-Agent': 'crawler-test',
@@ -25,24 +30,30 @@ headers = {
 conn = aiohttp.TCPConnector(limit=CONCURRENCY)
 semaphore = asyncio.Semaphore(CONCURRENCY)
 
+def get_exception(exc):
+    if not exc.__cause__:
+        return exc.__class__.__name__
+    return get_exception(exc.__cause__)
+
 async def make_request(url):
     async with semaphore:
         start = time()
 
-        timeout=aiohttp.ClientTimeout(total=REQUEST_TIMEOUT, connect=1, sock_connect=1, sock_read=REQUEST_TIMEOUT)
+        timeout=aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)
 
         async with aiohttp.ClientSession(headers=headers, timeout=timeout) as session:
             try:
                 async with session.get(url) as response:
                     code = response.status
             except Exception as exc:
-                code = exc.__class__.__name__
+                code = get_exception(exc)
             finally:
                 duration = time() - start
                 print(f"{url} - {code} - {duration:.2f}s")
                 return {'url': url, 'code': code, 'time': duration}
 
 async def main():
+    urls = file_reader()
     tasks = [make_request(url) for url in urls]
 
     results = await asyncio.gather(*tasks)

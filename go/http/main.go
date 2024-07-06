@@ -72,13 +72,13 @@ func main() {
     requestTimeout := getEnv("REQUEST_TIMEOUT", 5)
     urlLimit := getEnv("LIMIT", 1000)
 
-    file, err := os.Open("data/urls.txt")
+    file, err := os.Open("/mnt/appdata/urls.txt")
     if err != nil {
         panic(err)
     }
     defer file.Close()
 
-    fmt.Printf(" Starting crawl:\n")
+    fmt.Printf(" Starting index.:\n")
     fmt.Printf(" * CONCURRENCY: %d\n", concurrency)
     fmt.Printf(" * REQUEST_TIMEOUT: %d\n", requestTimeout)
     fmt.Printf(" * LIMIT: %d\n", urlLimit)

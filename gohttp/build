@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-
-go build -C gohttp -ldflags="-s -w" -v crawl.go

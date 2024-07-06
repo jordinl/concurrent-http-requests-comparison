@@ -1,9 +1,0 @@
-#!/usr/bin/env sh
-
-npm install --prefix node-fetch
-npm install --prefix superagent
-
-go mod download -C gocolly
-go build -C gocolly -v crawl.go
-
-ls  */build | xargs -L 1 bash

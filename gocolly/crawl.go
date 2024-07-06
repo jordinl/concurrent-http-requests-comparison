@@ -50,7 +50,7 @@ func main() {
     }
     results := []Result{}
 
-    fmt.Printf(" Starting crawl:\n")
+    fmt.Printf(" Starting index.:\n")
     fmt.Printf(" * Concurrency: %d\n", CONCURRENCY)
     fmt.Printf(" * Request timeout: %d\n", REQUEST_TIMEOUT)
     fmt.Printf(" * File: %s\n\n", FILE_PATH)

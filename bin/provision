@@ -3,20 +3,10 @@
 credentials=$1
 
 ssh -T -o StrictHostKeyChecking=no "$credentials" << EOF
-    sudo apt update
-    sudo apt install -y p7zip git build-essential pkg-config libssl-dev
+    curl -fsSL https://get.docker.com | bash
+    sudo usermod -aG docker \${USER}
 
-    arch=\$(dpkg --print-architecture)
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-    curl -fsSL https://deno.land/install.sh | sh
-    curl -L "https://go.dev/dl/go1.22.5.linux-\${arch}.tar.gz" -o /tmp/go.tar.gz
-    sudo tar -C /usr/local -xzf /tmp/go.tar.gz
-    rm /tmp/go.tar.gz
-
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
-    echo 'export PATH=\$PATH:/usr/local/go/bin' >> ~/.bashrc
-    echo 'export PATH=\$PATH:\$HOME/.deno/bin' >> ~/.bashrc
+    sudo apt install 7zip -y
 
     echo 'UV_THREADPOOL_SIZE=20' >> ~/.bashrc
 
@@ -30,10 +20,6 @@ EOF
 
 git remote remove server
 git remote add server "$credentials:app"
-
-ssh -t "$credentials" bash -i << EOF
-    nvm install 20
-EOF
 
 ./bin/deploy
 

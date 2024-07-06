@@ -27,14 +27,14 @@ async fn main() -> io::Result<()> {
     let request_timeout = get_env("REQUEST_TIMEOUT", 5);
     let concurrency = get_env("CONCURRENCY", 10);
 
-    println!("Starting crawl:");
+    println!("Starting index.:");
     println!(" * {}: {:?}", "URL_LIMIT", url_limit);
     println!(" * {}: {:?}", "REQUEST_TIMEOUT", request_timeout);
     println!(" * {}: {:?}", "CONCURRENCY", concurrency);
 
     let time = SystemTime::now();
 
-    let file = File::open("data/urls.txt")?;
+    let file = File::open("/mnt/appdata/urls.txt")?;
     let reader = BufReader::new(file);
 
     let results = stream::iter(reader.lines().take(url_limit as usize))

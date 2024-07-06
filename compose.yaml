@@ -1,0 +1,22 @@
+x-default: &default
+  init: true
+  network_mode: host
+  volumes:
+    - ./data:/mnt/appdata
+
+services:
+  deno-fetch:
+    <<: *default
+    build: deno/fetch
+  go-http:
+    <<: *default
+    build: go/http
+  node-fetch:
+    <<: *default
+    build: node/fetch
+  python-aiohttp:
+    <<: *default
+    build: python/aiohttp
+  rust-reqwest:
+    <<: *default
+    build: rust/reqwest
