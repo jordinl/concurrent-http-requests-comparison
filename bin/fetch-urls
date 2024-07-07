@@ -4,5 +4,5 @@ rm -rf data/*
 mkdir -p data
 curl https://www.domcop.com/files/top/top10milliondomains.csv.zip -o /tmp/urls.csv.zip
 7z e -so /tmp/urls.csv.zip > /tmp/urls.csv
-cat /tmp/urls.csv | tail -n +2 | grep -v -e doubleclick | awk -F '","' '{print "https://"$2}' > data/urls.txt
+cat /tmp/urls.csv | tail -n +2 | grep -v -e doubleclick | head -n 1000000 | awk -F '","' '{print "https://"$2}' > data/urls.txt
 rm /tmp/urls.csv*
