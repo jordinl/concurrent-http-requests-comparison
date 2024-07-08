@@ -23,6 +23,9 @@ services:
   go-http:
     <<: *default
     build: go/http
+  java-http:
+    <<: *default
+    build: java/http
   node-fetch:
     <<: *default
     build: node/fetch
