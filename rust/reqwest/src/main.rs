@@ -7,6 +7,7 @@ use reqwest::header::USER_AGENT;
 use tokio;
 use futures::prelude::*;
 use std::collections::HashMap;
+use std::error::Error;
 
 struct Result {
     code: String,
@@ -65,9 +66,23 @@ async fn main() -> io::Result<()> {
                     }
                     Err(err) => {
                         let time = start.elapsed().unwrap();
-                        println!("{}: {} -- {:?}", url, err, time);
+
+                        let mut last_err: &dyn Error = &err;
+                        while let Some(source) = last_err.source() {
+                            last_err = source;
+                        }
+
+                        let code = last_err.to_string()
+                                           .split(":")
+                                           .collect::<Vec<&str>>()
+                                           .first()
+                                           .unwrap()
+                                           .to_string();
+
+                        println!("{}: {} -- {:?}", url, code, time);
+
                         Result {
-                            code: err.without_url().to_string(),
+                            code,
                             time
                         }
                     }
