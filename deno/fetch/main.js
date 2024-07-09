@@ -39,7 +39,7 @@ const makeRequest = async url => {
     try {
         const controller = new AbortController();
         const signal = controller.signal;
-        const timeout = setTimeout(() => controller.abort('TIMEOUT_ERROR'), 5000);
+        const timeout = setTimeout(() => controller.abort('timeout error'), 5000);
         const response = await fetch(url, { headers, signal })
         clearTimeout(timeout);
         const time = Date.now() - startTime
@@ -47,7 +47,8 @@ const makeRequest = async url => {
         return { code: response.status, time }
     } catch (error) {
         const time = Date.now() - startTime
-        const code = error.name || error
+        const messageParts = (error.message || error).split(": ").filter(u => !u.match(/https?:\/\//))
+        const code = messageParts[1] || messageParts[0]
         console.error(`${url}: ${code} -- ${time}ms`)
         return { code, time }
     }
