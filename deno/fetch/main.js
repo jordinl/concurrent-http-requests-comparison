@@ -3,18 +3,21 @@ import { TextLineStream, PromisePool } from './deps.js';
 const CONCURRENCY = parseInt(Deno.env.get('CONCURRENCY') || 10)
 const REQUEST_TIMEOUT = parseInt(Deno.env.get('REQUEST_TIMEOUT') || 5)
 const LIMIT = parseInt(Deno.env.get('LIMIT') || 1000)
+const ACCEPT_ENCODING = Deno.env.get('ACCEPT_ENCODING')
 
 const start = new Date()
+
+const headers = {
+    'User-Agent': 'crawler-test',
+    ...(ACCEPT_ENCODING ? { 'Accept-Encoding': ACCEPT_ENCODING } : {})
+}
 
 console.log(`Starting crawl:`)
 console.log(` * CONCURRENCY: ${CONCURRENCY}`)
 console.log(` * REQUEST_TIMEOUT: ${REQUEST_TIMEOUT}`)
 console.log(` * LIMIT: ${LIMIT}`)
+console.log(` * ACCEPT_ENCODING: ${ACCEPT_ENCODING}`)
 
-const headers = {
-    'User-Agent': 'crawler-test',
-    'Accept-Encoding': 'gzip, deflate, br'
-}
 
 const iterator = (async function* () {
     const file = await Deno.open('/mnt/appdata/urls.txt')
