@@ -15,10 +15,10 @@ struct Result {
 }
 
 
-fn get_env(key: &str, default: u16) -> u16 {
+fn get_env(key: &str, default: u32) -> u32 {
     env::var(key)
         .ok()
-        .and_then(|limit| limit.parse::<u16>().ok())
+        .and_then(|limit| limit.parse::<u32>().ok())
         .unwrap_or(default)
 }
 
@@ -99,7 +99,7 @@ async fn main() -> io::Result<()> {
         acc
     });
 
-    let mut sorted_aggregates = aggregates.iter().collect::<Vec<(&String, &u16)>>();
+    let mut sorted_aggregates = aggregates.iter().collect::<Vec<(&String, &u32)>>();
 
     sorted_aggregates.sort_by(|a, b| b.1.cmp(&a.1));
 
@@ -108,7 +108,7 @@ async fn main() -> io::Result<()> {
     }
 
     let total_time = time.elapsed().unwrap();
-    let total_urls = aggregates.values().sum::<u16>();
+    let total_urls = aggregates.values().sum::<u32>();
     let mut sorted_times = results.iter().map(|result| result.time).collect::<Vec<Duration>>();
     sorted_times.sort_by(|a, b| b.cmp(a));
     let avg_time = sorted_times.iter().sum::<Duration>() / total_urls as u32;
