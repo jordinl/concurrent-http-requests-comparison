@@ -3,6 +3,7 @@ x-default: &default
   network_mode: host
   volumes:
     - ./data:/mnt/appdata
+  restart: on-failure
 
 services:
   deno-fetch:
