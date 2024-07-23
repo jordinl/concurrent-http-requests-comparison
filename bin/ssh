@@ -2,4 +2,4 @@
 
 cmd=$1
 
-ssh -t "$(git remote get-url server | cut -d ':' -f1)" "cd app; bash -i $cmd"
+ssh -t "$(git remote get-url server | cut -d ':' -f1)" "cd test; bash -i $cmd"
