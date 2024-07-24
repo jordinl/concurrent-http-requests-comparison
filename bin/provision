@@ -8,10 +8,8 @@ ssh -T -o StrictHostKeyChecking=no "$credentials" << EOF
 
     sudo apt install 7zip -y
 
-    echo 'UV_THREADPOOL_SIZE=20' >> ~/.bashrc
-
-    mkdir app
-    cd app
+    mkdir test
+    cd test
 
     git config --global init.defaultBranch main
     git config --global receive.denyCurrentBranch updateInstead
@@ -19,7 +17,7 @@ ssh -T -o StrictHostKeyChecking=no "$credentials" << EOF
 EOF
 
 git remote remove server
-git remote add server "$credentials:app"
+git remote add server "$credentials:test"
 
 ./bin/deploy
 
