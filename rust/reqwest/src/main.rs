@@ -58,9 +58,14 @@ async fn main() -> io::Result<()> {
                 match response {
                     Ok(response) => {
                         let time = start.elapsed().unwrap();
-                        println!("{}: {} -- {:?}", url, response.status(), time);
+                        let code = response.status().to_string();
+                        let _body = response.text().await.unwrap_or_else( |err| {
+                            println!("Error reading body: {:?}", err);
+                            "".to_string()
+                        });
+                        println!("{}: {} -- {:?}", url, code, time);
                         Result {
-                            code: response.status().to_string(),
+                            code,
                             time
                         }
                     }
