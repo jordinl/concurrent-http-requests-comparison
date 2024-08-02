@@ -16,4 +16,4 @@ ADD . .
 # Compile the main app so that it doesn't need to be compiled each startup/entry.
 RUN deno cache main.js
 
-ENTRYPOINT ["deno", "run", "--allow-env", "--allow-read", "--allow-net", "main.js"]
+ENTRYPOINT ["deno", "run", "--allow-env", "--allow-read", "--allow-net", "--unstable-http", "main.js"]

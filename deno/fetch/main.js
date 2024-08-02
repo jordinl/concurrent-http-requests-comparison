@@ -36,12 +36,14 @@ const iterator = (async function* () {
     }
 })();
 
+const client = Deno.createHttpClient({poolMaxIdlePerHost: 0});
+
 const makeRequest = async url => {
     const startTime = Date.now()
 
     try {
         const signal = AbortSignal.timeout(5000);
-        const response = await fetch(url, { headers, signal });
+        const response = await fetch(url, { headers, signal, client });
         await response.arrayBuffer();
         const time = Date.now() - startTime
         console.log(`${url}: ${response.status} -- ${time}ms`)
