@@ -40,12 +40,9 @@ const makeRequest = async url => {
     const startTime = Date.now()
 
     try {
-        const controller = new AbortController();
-        const signal = controller.signal;
-        const timeout = setTimeout(() => controller.abort('timeout error'), 5000);
+        const signal = AbortSignal.timeout(5000);
         const response = await fetch(url, { headers, signal });
         await response.arrayBuffer();
-        clearTimeout(timeout);
         const time = Date.now() - startTime
         console.log(`${url}: ${response.status} -- ${time}ms`)
         return { code: response.status, time }
