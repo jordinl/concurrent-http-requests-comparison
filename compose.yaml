@@ -3,6 +3,8 @@ x-default: &default
   network_mode: host
   volumes:
     - ./data:/mnt/appdata
+  environment:
+    - DATA_DIR=/mnt/appdata
   restart: on-failure
 
 services:
@@ -18,6 +20,9 @@ services:
   python-aiohttp:
     <<: *default
     build: python/aiohttp
+  ruby-async-http:
+    <<: *default
+    build: ruby/async-http
   rust-reqwest:
     <<: *default
     build: rust/reqwest
