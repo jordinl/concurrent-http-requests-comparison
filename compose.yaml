@@ -11,6 +11,9 @@ services:
   deno-fetch:
     <<: *default
     build: deno/fetch
+  csharp:
+    <<: *default
+    build: csharp
   go-http:
     <<: *default
     build: go/http

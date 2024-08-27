@@ -5,3 +5,5 @@ tmp/
 */crawl
 data/
 */target
+csharp/bin
+csharp/obj
