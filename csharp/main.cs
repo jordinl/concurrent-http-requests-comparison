@@ -1,50 +1,28 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 class Program
 {
-    private readonly IHttpClientFactory _httpClientFactory;
+    private static readonly HttpClient httpClient = new HttpClient();
     private static readonly int CONCURRENCY = int.Parse(Environment.GetEnvironmentVariable("CONCURRENCY") ?? "10");
     private static readonly int REQUEST_TIMEOUT = int.Parse(Environment.GetEnvironmentVariable("REQUEST_TIMEOUT") ?? "5");
     private static readonly int LIMIT = int.Parse(Environment.GetEnvironmentVariable("LIMIT") ?? "1000");
     private static readonly string DATA_DIR = Environment.GetEnvironmentVariable("DATA_DIR") ?? "../data";
 
-    public Program(IHttpClientFactory httpClientFactory)
-    {
-        _httpClientFactory = httpClientFactory;
-    }
-
     static async Task Main(string[] args)
     {
-        var builder = Host.CreateDefaultBuilder(args)
-        .ConfigureLogging((hostContext, logging) =>
-        {
-            logging.ClearProviders();
-        })
-            .ConfigureServices((hostContext, services) =>
-            {
-                services.AddHttpClient();
-                services.AddTransient<Program>();
-            });
-
-        using (var host = builder.Build())
-        {
-            var program = host.Services.GetRequiredService<Program>();
-            await program.Run(host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping);
-        }
-    }
-
-    private async Task Run(CancellationToken cancellationToken)
-    {
         var start = DateTime.Now;
+
+        httpClient.DefaultRequestHeaders.Add("User-Agent", "crawler-test");
+        httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+        httpClient.Timeout = TimeSpan.FromSeconds(REQUEST_TIMEOUT);
 
         Console.WriteLine("Starting crawl:");
         Console.WriteLine($" * CONCURRENCY: {CONCURRENCY}");
@@ -59,25 +37,21 @@ class Program
 
         foreach (var url in urls)
         {
-            await semaphore.WaitAsync(cancellationToken);
-            Console.WriteLine($"Starting {url}");
+            semaphore.Wait();
 
             tasks.Add(Task.Run(async () =>
             {
                 var start = DateTime.Now;
                 try
                 {
-                    using var httpClient = _httpClientFactory.CreateClient();
-                    httpClient.DefaultRequestHeaders.Add("User-Agent", "crawler-test");
-                    httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
-                    httpClient.Timeout = TimeSpan.FromSeconds(REQUEST_TIMEOUT);
-                    using (HttpResponseMessage response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+                    using (HttpResponseMessage response = await httpClient.GetAsync(url))
                     {
                         var code = ((int)response.StatusCode).ToString();
                         var time = (DateTime.Now - start).TotalMilliseconds;
                         Console.WriteLine($"{url} {code} -- {time} ms");
                         results.Add((code, time));
-                    }
+                    };
+
                 }
                 catch (Exception ex)
                 {
@@ -90,8 +64,8 @@ class Program
                 {
                     semaphore.Release();
                 }
-            }, cancellationToken));
-        }
+            }));
+        };
         await Task.WhenAll(tasks);
 
         var aggregates = results.GroupBy(r => r.Code).ToDictionary(g => g.Key, g => g.Count());
@@ -109,3 +83,6 @@ class Program
         }
     }
 }
+
+
+
