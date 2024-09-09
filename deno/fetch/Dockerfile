@@ -1,4 +1,4 @@
-FROM denoland/deno:1.45.5
+FROM denoland/deno:1.46.2
 
 # The port that your application listens to.
 WORKDIR /app
