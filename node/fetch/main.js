@@ -5,6 +5,7 @@ const CONCURRENCY = parseInt(process.env.CONCURRENCY || 10)
 const REQUEST_TIMEOUT = parseInt(process.env.REQUEST_TIMEOUT || 5)
 const LIMIT = parseInt(process.env.LIMIT || 1000)
 const start = new Date()
+const dataDir = process.env.DATA_DIR || './data'
 
 console.log(`Starting crawl:`)
 console.log(` * CONCURRENCY: ${CONCURRENCY}`)
@@ -17,7 +18,7 @@ const headers = {
 }
 
 const iterator = (async function* () {
-    const readableStream = fs.createReadStream('/mnt/appdata/urls.txt', {encoding: 'utf8'})
+    const readableStream = fs.createReadStream(`${dataDir}/urls.txt`, {encoding: 'utf8'})
 
     let count = 0
     let last = ''
