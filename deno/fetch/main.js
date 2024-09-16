@@ -4,6 +4,7 @@ const CONCURRENCY = parseInt(Deno.env.get('CONCURRENCY') || 10)
 const REQUEST_TIMEOUT = parseInt(Deno.env.get('REQUEST_TIMEOUT') || 5)
 const LIMIT = parseInt(Deno.env.get('LIMIT') || 1000)
 const ACCEPT_ENCODING = Deno.env.get('ACCEPT_ENCODING')
+const dataDir = Deno.env.get('DATA_DIR') || './data'
 
 const start = new Date()
 
@@ -20,7 +21,7 @@ console.log(` * ACCEPT_ENCODING: ${ACCEPT_ENCODING}`)
 
 
 const iterator = (async function* () {
-    const file = await Deno.open('/mnt/appdata/urls.txt')
+    const file = await Deno.open(`${dataDir}/urls.txt`)
 
     const readable = file.readable
         .pipeThrough(new TextDecoderStream()) // decode Uint8Array to string
