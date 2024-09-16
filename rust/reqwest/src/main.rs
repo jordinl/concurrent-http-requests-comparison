@@ -27,6 +27,7 @@ async fn main() -> io::Result<()> {
     let url_limit = get_env("LIMIT", 1000);
     let request_timeout = get_env("REQUEST_TIMEOUT", 5);
     let concurrency = get_env("CONCURRENCY", 10);
+    let data_dir = env::var("DATA_DIR").unwrap_or("./data".to_string());
 
     println!("Starting index.:");
     println!(" * {}: {:?}", "URL_LIMIT", url_limit);
@@ -35,7 +36,8 @@ async fn main() -> io::Result<()> {
 
     let time = SystemTime::now();
 
-    let file = File::open("/mnt/appdata/urls.txt")?;
+    let file = File::open(format!("{}/urls.txt", data_dir))
+        .unwrap();
     let reader = BufReader::new(file);
 
     let results = stream::iter(reader.lines().take(url_limit as usize))
