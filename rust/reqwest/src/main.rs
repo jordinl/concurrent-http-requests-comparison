@@ -22,6 +22,27 @@ fn get_env(key: &str, default: u32) -> u32 {
         .unwrap_or(default)
 }
 
+async fn handle_response(response: reqwest::Response, start: SystemTime) -> Result {
+    let status_code = response.status().to_string();
+    match response.text().await {
+        Ok(_body) => {
+            let time = start.elapsed().unwrap();
+            Result { code: status_code, time }
+        }
+        Err(err) => handle_error(err, start).await,
+    }
+}
+
+async fn handle_error(err: impl Error, start: SystemTime) -> Result {
+    let time = start.elapsed().unwrap();
+    let mut last_err: &dyn Error = &err;
+    while let Some(source) = last_err.source() {
+        last_err = source;
+    }
+    let code = last_err.to_string().split(":").collect::<Vec<&str>>().first().unwrap().to_string();
+    Result { code, time }
+}
+
 #[tokio::main]
 async fn main() -> io::Result<()> {
     let url_limit = get_env("LIMIT", 1000);
@@ -57,43 +78,14 @@ async fn main() -> io::Result<()> {
                     .send()
                     .await;
 
-                match response {
-                    Ok(response) => {
-                        let time = start.elapsed().unwrap();
-                        let code = response.status().to_string();
-                        let _body = response.text().await.unwrap_or_else( |err| {
-                            println!("Error reading body: {:?}", err);
-                            "".to_string()
-                        });
-                        println!("{}: {} -- {:?}", url, code, time);
-                        Result {
-                            code,
-                            time
-                        }
-                    }
-                    Err(err) => {
-                        let time = start.elapsed().unwrap();
 
-                        let mut last_err: &dyn Error = &err;
-                        while let Some(source) = last_err.source() {
-                            last_err = source;
-                        }
+                let result = match response {
+                    Ok(response) => handle_response(response, start).await,
+                    Err(err) => handle_error(err, start).await,
+                };
 
-                        let code = last_err.to_string()
-                                           .split(":")
-                                           .collect::<Vec<&str>>()
-                                           .first()
-                                           .unwrap()
-                                           .to_string();
-
-                        println!("{}: {} -- {:?}", url, code, time);
-
-                        Result {
-                            code,
-                            time
-                        }
-                    }
-                }
+                println!("{}: {} -- {:?}", url, result.code, result.time);
+                result
             }
         })
         .buffer_unordered(concurrency as usize)
