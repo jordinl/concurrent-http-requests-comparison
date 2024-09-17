@@ -8,6 +8,7 @@ use tokio;
 use futures::prelude::*;
 use std::collections::HashMap;
 use std::error::Error;
+use std::process;
 
 struct Result {
     code: String,
@@ -57,8 +58,7 @@ async fn main() -> io::Result<()> {
 
     let time = SystemTime::now();
 
-    let file = File::open(format!("{}/urls.txt", data_dir))
-        .unwrap();
+    let file = File::open(format!("{}/urls.txt", data_dir))?;
     let reader = BufReader::new(file);
 
     let results = stream::iter(reader.lines().take(url_limit as usize))
@@ -118,5 +118,5 @@ async fn main() -> io::Result<()> {
     println!("Average time: {:?}", avg_time);
     println!("Median time: {:?}", median_time);
 
-    Ok(())
+    process::exit(0);
 }
