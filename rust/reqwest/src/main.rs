@@ -68,11 +68,11 @@ async fn main() -> io::Result<()> {
                 let url = line.unwrap();
 
                 let client = reqwest::Client::builder()
-                    .timeout(Duration::from_secs(request_timeout as u64))
                     .build()
                     .unwrap();
 
                 let response = client.get(&url)
+                    .timeout(Duration::from_secs(request_timeout as u64))
                     .header(USER_AGENT, "crawler-test")
                     .header("Accept-Encoding", "gzip, deflate, br")
                     .send()
