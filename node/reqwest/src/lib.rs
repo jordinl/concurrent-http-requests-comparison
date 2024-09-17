@@ -13,6 +13,7 @@ pub struct Response {
 #[napi(object)]
 pub struct RequestOptions {
     pub headers: Option<HashMap<String, String>>,
+    pub timeout: Option<u32>,
 }
 
 async fn handle_response(response: reqwest::Response) -> Response {
@@ -35,13 +36,15 @@ async fn handle_error(err: impl Error) -> Response {
 #[napi]
 async fn fetch_url(url: String, opts: Option<RequestOptions>) -> Response {
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(5))
         .build()
         .unwrap();
 
     let mut request = client.get(&url);
 
     if let Some(opts) = opts {
+        if let Some(timeout) = opts.timeout {
+            request = request.timeout(Duration::from_millis(timeout as u64));
+        }
         if let Some(headers) = opts.headers {
             for (key, value) in headers {
                 request = request.header(key, value);

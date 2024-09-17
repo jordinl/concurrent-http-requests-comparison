@@ -37,7 +37,7 @@ const iterator = (async function* () {
 
 const makeRequest = async url => {
   const start = new Date();
-  const response = await reqwest.fetchUrl(url, { headers })
+  const response = await reqwest.fetchUrl(url, { headers, timeout: 5000 })
   const time = new Date() - start;
   const code = response.code;
   console.log(`${url}: ${code} -- ${time}ms`)
