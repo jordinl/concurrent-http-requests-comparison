@@ -24,11 +24,11 @@ fn get_env(key: &str, default: u32) -> u32 {
 }
 
 async fn handle_response(response: reqwest::Response, start: SystemTime) -> Result {
-    let status_code = response.status().to_string();
+    let code = response.status().as_str().to_string();
     match response.text().await {
         Ok(_body) => {
             let time = start.elapsed().unwrap();
-            Result { code: status_code, time }
+            Result { code, time }
         }
         Err(err) => handle_error(err, start).await,
     }
