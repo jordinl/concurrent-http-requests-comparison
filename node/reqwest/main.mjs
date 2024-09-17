@@ -15,7 +15,6 @@ console.log(` * LIMIT: ${LIMIT}`)
 
 const headers = {
   'User-Agent': 'crawler-test',
-  'Accept-Encoding': 'gzip, deflate, br'
 }
 
 const iterator = (async function* () {
@@ -37,8 +36,9 @@ const iterator = (async function* () {
 })();
 
 const makeRequest = async url => {
-  const response = await reqwest.fetchUrl(url, {userAgent: 'crawler-test'})
-  const time = response.totalTime;
+  const start = new Date();
+  const response = await reqwest.fetchUrl(url, { headers })
+  const time = new Date() - start;
   const code = response.code;
   console.log(`${url}: ${code} -- ${time}ms`)
   return { code, time }
