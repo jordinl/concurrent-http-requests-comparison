@@ -12,7 +12,7 @@ use std::process;
 
 struct Result {
     code: String,
-    time: Duration
+    time: u128
 }
 
 
@@ -23,25 +23,25 @@ fn get_env(key: &str, default: u32) -> u32 {
         .unwrap_or(default)
 }
 
-async fn handle_response(response: reqwest::Response, start: SystemTime) -> Result {
+async fn handle_response(response: reqwest::Response) -> String {
     let code = response.status().as_str().to_string();
     match response.text().await {
-        Ok(_body) => {
-            let time = start.elapsed().unwrap();
-            Result { code, time }
-        }
-        Err(err) => handle_error(err, start).await,
+        Ok(_body) => code,
+        Err(err) => handle_error(err).await,
     }
 }
 
-async fn handle_error(err: impl Error, start: SystemTime) -> Result {
-    let time = start.elapsed().unwrap();
+async fn handle_error(err: impl Error) -> String {
     let mut last_err: &dyn Error = &err;
     while let Some(source) = last_err.source() {
         last_err = source;
     }
-    let code = last_err.to_string().split(":").collect::<Vec<&str>>().first().unwrap().to_string();
-    Result { code, time }
+    last_err.to_string()
+            .split(":")
+            .collect::<Vec<&str>>()
+            .first()
+            .unwrap()
+            .to_string()
 }
 
 #[tokio::main]
@@ -78,14 +78,17 @@ async fn main() -> io::Result<()> {
                     .send()
                     .await;
 
+                let time = start.elapsed()
+                                .unwrap()
+                                .as_millis();
 
-                let result = match response {
-                    Ok(response) => handle_response(response, start).await,
-                    Err(err) => handle_error(err, start).await,
+                let code = match response {
+                    Ok(response) => handle_response(response).await,
+                    Err(err) => handle_error(err).await,
                 };
 
-                println!("{}: {} -- {:?}", url, result.code, result.time);
-                result
+                println!("{}: {} -- {:?}ms", url, code, time);
+                Result { code, time }
             }
         })
         .buffer_unordered(concurrency as usize)
@@ -106,17 +109,17 @@ async fn main() -> io::Result<()> {
         println!("{}: {}", code, count);
     }
 
-    let total_time = time.elapsed().unwrap();
+    let total_time = time.elapsed().unwrap().as_secs();
     let total_urls = aggregates.values().sum::<u32>();
-    let mut sorted_times = results.iter().map(|result| result.time).collect::<Vec<Duration>>();
+    let mut sorted_times = results.iter().map(|result| result.time).collect::<Vec<u128>>();
     sorted_times.sort_by(|a, b| b.cmp(a));
-    let avg_time = sorted_times.iter().sum::<Duration>() / total_urls as u32;
+    let avg_time = sorted_times.iter().sum::<u128>() / total_urls as u128;
     let median_time = sorted_times[sorted_times.len() / 2];
 
-    println!("Total time: {:?}", total_time);
+    println!("Total time: {:?}s", total_time);
     println!("Total URLs: {:?}", total_urls);
-    println!("Average time: {:?}", avg_time);
-    println!("Median time: {:?}", median_time);
+    println!("Average time: {:?}ms", avg_time);
+    println!("Median time: {:?}ms", median_time);
 
     process::exit(0);
 }
