@@ -34,7 +34,7 @@ async fn handle_error(err: impl Error) -> Response {
 }
 
 #[napi]
-async fn fetch_url(url: String, opts: Option<RequestOptions>) -> Response {
+async fn fetch(url: String, opts: Option<RequestOptions>) -> Response {
     let client = reqwest::Client::builder()
         .build()
         .unwrap();
