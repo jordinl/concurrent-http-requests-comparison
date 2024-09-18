@@ -9,7 +9,7 @@ export interface RequestOptions {
 }
 export declare function fetch(url: string, opts?: RequestOptions | undefined | null): Promise<Response>
 export declare class Response {
-  code: string
+  status: number
   body?: string
-  constructor(code: string, body?: string)
+  constructor(status: number, body?: string)
 }

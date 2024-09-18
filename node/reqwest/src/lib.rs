@@ -1,4 +1,5 @@
 use napi_derive::napi;
+use napi::Result;
 use reqwest;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -6,7 +7,7 @@ use std::error::Error;
 
 #[napi(constructor)]
 pub struct Response {
-    pub code: String,
+    pub status: u16,
     pub body: Option<String>,
 }
 
@@ -16,25 +17,32 @@ pub struct RequestOptions {
     pub timeout: Option<u32>,
 }
 
-async fn handle_response(response: reqwest::Response) -> Response {
-    let code = response.status().as_str().to_string();
+async fn handle_response(response: reqwest::Response) -> Result<Response> {
+    let status = response.status().as_u16();
     match response.text().await {
-        Ok(body) => Response { code, body: Some(body) },
-        Err(err) => handle_error(err).await,
+        Ok(body) => Ok(Response { status, body: Some(body) }),
+        Err(err) => Err(handle_error(err)),
     }
 }
 
-async fn handle_error(err: impl Error) -> Response {
-    let mut last_err: &dyn Error = &err;
-    while let Some(source) = last_err.source() {
-        last_err = source;
-    }
-    let code = last_err.to_string().split(":").next().unwrap_or("").to_string();
-    Response { code, body: None }
+fn handle_error(err: impl Error) -> napi::Error {
+    napi::Error::new(
+        napi::Status::GenericFailure,
+        format!("Error: {}", err),
+    )
 }
+
+// async fn handle_error(err: impl Error) -> Response {
+//     let mut last_err: &dyn Error = &err;
+//     while let Some(source) = last_err.source() {
+//         last_err = source;
+//     }
+//     let code = last_err.to_string().split(":").next().unwrap_or("").to_string();
+//     Response { code, body: None }
+// }
 
 #[napi]
-async fn fetch(url: String, opts: Option<RequestOptions>) -> Response {
+async fn fetch(url: String, opts: Option<RequestOptions>) -> Result<Response> {
     let client = reqwest::Client::builder()
         .build()
         .unwrap();
@@ -54,6 +62,6 @@ async fn fetch(url: String, opts: Option<RequestOptions>) -> Response {
 
     match request.send().await {
         Ok(response) => handle_response(response).await,
-        Err(err) => handle_error(err).await,
+        Err(err) => Err(handle_error(err)),
     }
 }

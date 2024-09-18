@@ -36,12 +36,20 @@ const iterator = (async function* () {
 })();
 
 const makeRequest = async url => {
-  const start = new Date();
-  const response = await reqwest.fetch(url, { headers, timeout: 5000 })
-  const time = new Date() - start;
-  const code = response.code;
-  console.log(`${url}: ${code} -- ${time}ms`)
-  return { code, time }
+  const start = Date.now()
+
+  try {
+    const response = await reqwest.fetch(url, { headers, timeout: 5000 })
+    const time = Date.now() - start;
+    const text = response.body;
+    console.log(`${url}: ${response.status} -- ${time}ms`)
+    return {code: response.status, time}
+  } catch (error) {
+    const time = Date.now() - start
+    const code = error.cause?.code || error.name
+    console.error(`${url}: ${code} -- ${time}ms`)
+    return {code, time}
+  }
 }
 
 const {results, errors} = await PromisePool
@@ -64,3 +72,4 @@ console.log(`Total URLs: ${Object.values(aggregates).reduce((agg, count) => agg 
 
 console.log(aggregates)
 
+process.exit(0)
