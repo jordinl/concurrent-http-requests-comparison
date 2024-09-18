@@ -4,6 +4,7 @@ use reqwest;
 use std::collections::HashMap;
 use std::time::Duration;
 use std::error::Error;
+use regex::Regex;
 
 #[napi(constructor)]
 pub struct Response {
@@ -25,10 +26,22 @@ async fn handle_response(response: reqwest::Response) -> Result<Response> {
     }
 }
 
-fn handle_error(err: impl Error) -> napi::Error {
+fn handle_error(err: impl Error + std::marker::Send + std::marker::Sync + 'static) -> napi::Error {
+    let mut last_err: &dyn Error = &err;
+    while let Some(source) = last_err.source() {
+        last_err = source;
+    }
+    let re = Regex::new(r":|\(").unwrap();
+    let message = re.split(last_err.to_string().as_str())
+                    .next()
+                    .unwrap_or("")
+                    .trim()
+                    .to_lowercase()
+                    .to_string();
+
     napi::Error::new(
         napi::Status::GenericFailure,
-        format!("Error: {}", err),
+        message
     )
 }
 

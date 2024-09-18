@@ -46,7 +46,7 @@ const makeRequest = async url => {
     return {code: response.status, time}
   } catch (error) {
     const time = Date.now() - start
-    const code = error.cause?.code || error.name
+    const code = error.message
     console.error(`${url}: ${code} -- ${time}ms`)
     return {code, time}
   }
