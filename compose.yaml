@@ -20,6 +20,9 @@ services:
   node-fetch:
     <<: *default
     build: node/fetch
+  node-reqwest:
+    <<: *default
+    build: node/reqwest
   python-aiohttp:
     <<: *default
     build: python/aiohttp
