@@ -11,5 +11,6 @@ export declare function fetch(url: string, opts?: RequestOptions | undefined | n
 export declare class Response {
   status: number
   body?: string
-  constructor(status: number, body?: string)
+  url: string
+  constructor(status: number, body?: string, url: string)
 }
