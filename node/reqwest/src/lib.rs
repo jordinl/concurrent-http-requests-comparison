@@ -10,7 +10,8 @@ use regex::Regex;
 pub struct Response {
     pub status: u16,
     pub body: Option<String>,
-    pub url: String
+    pub url: String,
+    pub headers: HashMap<String, String>
 }
 
 #[napi(object)]
@@ -22,8 +23,14 @@ pub struct RequestOptions {
 async fn handle_response(response: reqwest::Response) -> Result<Response> {
     let status = response.status().as_u16();
     let url = response.url().to_string();
+    let headers = response.headers()
+                          .iter()
+                          .map(|(name, value)| {
+                              (name.to_string(), value.to_str().unwrap_or("").to_string())
+                          })
+                          .collect();
     match response.text().await {
-        Ok(body) => Ok(Response { status, url, body: Some(body) }),
+        Ok(body) => Ok(Response { status, url, headers, body: Some(body) }),
         Err(err) => Err(handle_error(err)),
     }
 }

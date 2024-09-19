@@ -12,5 +12,6 @@ export declare class Response {
   status: number
   body?: string
   url: string
-  constructor(status: number, body?: string, url: string)
+  headers: Record<string, string>
+  constructor(status: number, body?: string, url: string, headers: Record<string, string>)
 }
