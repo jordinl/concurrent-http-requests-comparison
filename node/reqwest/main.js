@@ -1,5 +1,5 @@
 import fs from 'fs';
-import * as reqwest from './index.js';
+import * as reqwest from '@reqwest/fetch';
 import {PromisePool} from '@supercharge/promise-pool'
 
 const CONCURRENCY = parseInt(process.env.CONCURRENCY || 10)
@@ -15,6 +15,7 @@ console.log(` * LIMIT: ${LIMIT}`)
 
 const headers = {
   'User-Agent': 'crawler-test',
+  'accept': 'text/html'
 }
 
 const iterator = (async function* () {
