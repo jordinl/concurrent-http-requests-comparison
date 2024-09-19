@@ -35,7 +35,7 @@ async fn handle_response(response: reqwest::Response) -> Result<Response> {
     }
 }
 
-fn handle_error(err: impl Error + std::marker::Send + std::marker::Sync + 'static) -> napi::Error {
+fn handle_error(err: impl Error) -> napi::Error {
     let mut last_err: &dyn Error = &err;
     while let Some(source) = last_err.source() {
         last_err = source;
@@ -48,20 +48,8 @@ fn handle_error(err: impl Error + std::marker::Send + std::marker::Sync + 'stati
                     .to_lowercase()
                     .to_string();
 
-    napi::Error::new(
-        napi::Status::GenericFailure,
-        message
-    )
+    napi::Error::new(napi::Status::GenericFailure, message)
 }
-
-// async fn handle_error(err: impl Error) -> Response {
-//     let mut last_err: &dyn Error = &err;
-//     while let Some(source) = last_err.source() {
-//         last_err = source;
-//     }
-//     let code = last_err.to_string().split(":").next().unwrap_or("").to_string();
-//     Response { code, body: None }
-// }
 
 #[napi]
 async fn fetch(url: String, opts: Option<RequestOptions>) -> Result<Response> {
