@@ -8,7 +8,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@reqwest/fetch": "^0.0.7",
+    "@reqwest/fetch": "^0.0.12",
     "@supercharge/promise-pool": "^3.2.0"
   },
   "type": "module"
