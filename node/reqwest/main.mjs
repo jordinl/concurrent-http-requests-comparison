@@ -41,7 +41,7 @@ const makeRequest = async url => {
   try {
     const response = await reqwest.fetch(url, { headers, timeout: 5000 })
     const time = Date.now() - start;
-    const text = response.body;
+    const text = response.body.replaceAll("\u0000", "")
     console.log(`${url}: ${response.status} -- ${time}ms`)
     return {code: response.status, time}
   } catch (error) {
