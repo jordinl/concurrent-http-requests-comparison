@@ -26,7 +26,10 @@ fn get_env(key: &str, default: u32) -> u32 {
 async fn handle_response(response: reqwest::Response) -> String {
     let code = response.status().as_str().to_string();
     match response.text().await {
-        Ok(_body) => code,
+        Ok(body) => {
+            let _ = body.replace("\0", "");
+            code
+        },
         Err(err) => handle_error(err).await,
     }
 }
