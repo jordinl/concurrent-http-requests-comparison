@@ -26,25 +26,24 @@ const blockedResourceTypes = [
   "stylesheet",
 ];
 
-// we can also block by domains, like google-analytics etc.
-const blockedDomains = [
-  "adition",
-  "adzerk",
-  "analytics",
-  "cdn.api.twitter",
-  "clicksor",
-  "clicktale",
-  "doubleclick",
-  "exelator",
-  "fontawesome",
-  "google-analytics",
-  "googletagmanager",
-  "mixpanel",
-  "optimizely",
-  "quantserve",
-  "sharethrough",
-  "tiqcdn",
-  "zedo",
+const blockedUrls = [
+  // "favicon.ico",
+  // "cookielaw.org",
+  // "onetrust.com",
+  // "googlesyndication.com",
+  // "googletagmanager.com",
+  // "google-analytics.com",
+  // "licdn.com",
+  // "ads-twitter.com",
+  // "doubleclick.net",
+  // "google.com/pagead",
+  // "demandbase.com",
+  // "company-target.com",
+  // "sfdcstatic.com",
+  // "gstatic.com",
+  // "sentry.io",
+  // "cdndex.io",
+  // "player.vimeo.com",
 ];
 
 const launchBrowser = async () => {
@@ -62,16 +61,18 @@ const launchBrowser = async () => {
 const browser = await launchBrowser();
 
 const makeRequest = async (url) => {
-  const context = await browser.createBrowserContext();
-  const page = await context.newPage();
+  const page = await browser.newPage();
 
+  await page.setDefaultTimeout(5000)
   await page.setRequestInterception(true);
 
   page.on("request", (request) => {
     const url = request.url().split("?")[0];
     if (blockedResourceTypes.includes(request.resourceType()) ||
-      blockedDomains.some(domain => url.includes(domain))) {
-      request.abort();
+      blockedUrls.some(blockedUrl => url.includes(blockedUrl))) {
+      request.respond({
+        status: 200
+      });
     } else {
       request.continue();
     }
@@ -85,16 +86,21 @@ const makeRequest = async (url) => {
       waitUntil: "networkidle2",
       timeout: 10000
     });
-    const code = response.status();
+
+    const title = await page.evaluate(() => document.querySelector('h1,h2,h3,h4,h5')?.textContent?.trim());
+
+    const code = title ? response.status() : 'NO TITLE';
+
     const time = Date.now() - startTime;
-    console.log(`${url}: ${code} -- ${time}ms`)
+    console.log(`${url}: ${code} -- ${title} -- ${time}ms`)
     result = { code, time };
   } catch (err) {
     const time = Date.now() - startTime;
     const code = err.message;
+    console.log(`${url}: ${code} -- ${time}ms`)
     result = { code, time };
   } finally {
-    await context.close();
+    await page.close();
     // await browser.close();
   }
 
