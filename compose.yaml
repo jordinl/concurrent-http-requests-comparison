@@ -5,7 +5,12 @@ x-default: &default
     - ./data:/mnt/appdata
   environment:
     - DATA_DIR=/mnt/appdata
+    - CONCURRENCY
   restart: on-failure
+  deploy:
+    resources:
+      limits:
+        cpus: "4.0"
 
 services:
   deno-fetch:
@@ -20,6 +25,9 @@ services:
   node-fetch:
     <<: *default
     build: node/fetch
+  node-puppeteer:
+    <<: *default
+    build: node/puppeteer
   node-reqwest:
     <<: *default
     build: node/reqwest
