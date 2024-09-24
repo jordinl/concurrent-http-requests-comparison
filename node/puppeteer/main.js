@@ -51,7 +51,7 @@ const launchBrowser = async () => {
     ...(process.env.CHROMIUM_BIN
       ? {
         executablePath: process.env.CHROMIUM_BIN,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"], // TODO: see if we can remove this
+        args: ["--no-sandbox", "--disable-setuid-sandbox","--disable-dev-shm-usage"], // TODO: see if we can remove this
       }
       : {}),
     headless: "shell",
