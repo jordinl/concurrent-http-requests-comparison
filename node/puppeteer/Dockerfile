@@ -1,12 +1,13 @@
 # pull official base image
-FROM node:22-slim
+FROM node:22-bookworm-slim
 
-# install chromium for puppeteer
+ENV CHROME_FLAGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
+
+## install chromium for puppeteer
 RUN apt-get update && apt-get install -y chromium
 
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    CHROMIUM_BIN=/usr/bin/chromium
 
+USER node
 # set working directory
 WORKDIR /app
 

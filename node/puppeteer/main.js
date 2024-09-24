@@ -46,14 +46,11 @@ const blockedUrls = [
   // "player.vimeo.com",
 ];
 
+const args = process.env.CHROME_FLAGS?.split(' ') || [];
+
 const launchBrowser = async () => {
   return await puppeteer.launch({
-    ...(process.env.CHROMIUM_BIN
-      ? {
-        executablePath: process.env.CHROMIUM_BIN,
-        args: ["--no-sandbox", "--disable-setuid-sandbox","--disable-dev-shm-usage"], // TODO: see if we can remove this
-      }
-      : {}),
+    args,
     headless: "shell",
   });
 };
