@@ -87,7 +87,11 @@ const makeRequest = async (url) => {
       timeout: 10000
     });
 
-    const title = await page.evaluate(() => document.querySelector('h1,h2,h3,h4,h5')?.textContent?.trim());
+    const title = await page.evaluate(() => {
+      return [...document.querySelectorAll('h1,h2,h3,h4,h5')]
+        .map(el => el.textContent.trim().replace(/\s+/g, ' '))
+        .filter(el => el)[0]
+    });
 
     const code = title ? response.status() : 'NO TITLE';
 
@@ -146,4 +150,3 @@ console.log(`Median time: ${medianTime}`)
 console.log(`Total URLs: ${Object.values(aggregates).reduce((agg, count) => agg + count, 0)}`)
 
 console.log(aggregates)
-
