@@ -8,10 +8,10 @@ x-default: &default
     - CONCURRENCY
     - LIMIT
   restart: on-failure
-  deploy:
-    resources:
-      limits:
-        cpus: "4.0"
+#  deploy:
+#    resources:
+#      limits:
+#        cpus: "4.0"
 
 services:
   deno-fetch:
