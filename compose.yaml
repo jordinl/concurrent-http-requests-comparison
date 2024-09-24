@@ -6,6 +6,7 @@ x-default: &default
   environment:
     - DATA_DIR=/mnt/appdata
     - CONCURRENCY
+    - LIMIT
   restart: on-failure
   deploy:
     resources:
