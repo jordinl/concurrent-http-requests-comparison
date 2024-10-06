@@ -10,7 +10,12 @@ using System.Threading.Tasks;
 
 class Program
 {
-    private static readonly HttpClient httpClient = new HttpClient();
+    private static readonly HttpClientHandler httpClientHandler = new HttpClientHandler
+    {
+        AllowAutoRedirect = true,
+        MaxAutomaticRedirections = 10
+    };
+    private static readonly HttpClient httpClient = new HttpClient(httpClientHandler);
     private static readonly int CONCURRENCY = int.Parse(Environment.GetEnvironmentVariable("CONCURRENCY") ?? "10");
     private static readonly int REQUEST_TIMEOUT = int.Parse(Environment.GetEnvironmentVariable("REQUEST_TIMEOUT") ?? "5");
     private static readonly int LIMIT = int.Parse(Environment.GetEnvironmentVariable("LIMIT") ?? "1000");
@@ -33,39 +38,32 @@ class Program
 
         var results = new ConcurrentBag<(string Code, double Time)>();
         var semaphore = new SemaphoreSlim(CONCURRENCY, CONCURRENCY);
-        var tasks = new List<Task>();
 
-        foreach (var url in urls)
+        var tasks = urls.Select(async url =>
         {
-            semaphore.Wait();
+            await semaphore.WaitAsync();
 
-            tasks.Add(Task.Run(async () =>
+            var start = DateTime.Now;
+            try
             {
-                var start = DateTime.Now;
-                try
-                {
-                    using (HttpResponseMessage response = await httpClient.GetAsync(url))
-                    {
-                        var code = ((int)response.StatusCode).ToString();
-                        var time = (DateTime.Now - start).TotalMilliseconds;
-                        Console.WriteLine($"{url} {code} -- {time} ms");
-                        results.Add((code, time));
-                    };
-
-                }
-                catch (Exception ex)
-                {
-                    var time = (DateTime.Now - start).TotalMilliseconds;
-                    var code = ex.GetType().Name;
-                    Console.Error.WriteLine($"{url}: {code} -- {time}ms");
-                    results.Add((code, time));
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            }));
-        };
+                using HttpResponseMessage response = await httpClient.GetAsync(url);
+                var code = ((int)response.StatusCode).ToString();
+                var time = (DateTime.Now - start).TotalMilliseconds;
+                Console.WriteLine($"{url} {code} -- {time} ms");
+                results.Add((code, time));
+            }
+            catch (Exception ex)
+            {
+                var time = (DateTime.Now - start).TotalMilliseconds;
+                var code = ex.GetType().Name;
+                Console.Error.WriteLine($"{url}: {code} -- {time}ms");
+                results.Add((code, time));
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
         await Task.WhenAll(tasks);
 
         var aggregates = results.GroupBy(r => r.Code).ToDictionary(g => g.Key, g => g.Count());
