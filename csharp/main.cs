@@ -1,27 +1,15 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 class Program
 {
-    private static readonly HttpClientHandler httpClientHandler = new HttpClientHandler
-    {
-        AllowAutoRedirect = true,
-        MaxAutomaticRedirections = 10
-    };
-    private static readonly HttpClient httpClient = new HttpClient(httpClientHandler);
+    private static readonly HttpClient httpClient = new();
     private static readonly int CONCURRENCY = int.Parse(Environment.GetEnvironmentVariable("CONCURRENCY") ?? "10");
     private static readonly int REQUEST_TIMEOUT = int.Parse(Environment.GetEnvironmentVariable("REQUEST_TIMEOUT") ?? "5");
     private static readonly int LIMIT = int.Parse(Environment.GetEnvironmentVariable("LIMIT") ?? "1000");
     private static readonly string DATA_DIR = Environment.GetEnvironmentVariable("DATA_DIR") ?? "../data";
 
-    static async Task Main(string[] args)
+    static async Task Main()
     {
         var start = DateTime.Now;
 
