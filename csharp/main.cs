@@ -38,6 +38,11 @@ class Program
                 var code = ((int)response.StatusCode).ToString();
                 var time = (DateTime.Now - start).TotalMilliseconds;
                 Console.WriteLine($"{url} {code} -- {time} ms");
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    var _out = body.Replace("\0", "");
+                }
                 results.Add((code, time));
             }
             catch (Exception ex)
