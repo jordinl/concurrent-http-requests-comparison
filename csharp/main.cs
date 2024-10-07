@@ -20,7 +20,9 @@ internal class BetterHttpClient
     {
       var response = await _client.GetAsync(url);
 
-      if (response.StatusCode is not (HttpStatusCode.Moved or HttpStatusCode.Redirect))
+      var status = (int)response.StatusCode;
+
+      if (status is < 300 or >= 400)
       {
         return response;
       }
@@ -52,7 +54,7 @@ class Program
 
         var urls = File.ReadLines(Path.Combine(DATA_DIR, "urls.txt")).Take(LIMIT);
 
-        var results = new ConcurrentBag<(string Code, double Time)>();
+        var results = new ConcurrentBag<(string Code, int Time)>();
         var semaphore = new SemaphoreSlim(CONCURRENCY, CONCURRENCY);
 
         var tasks = urls.Select(async url =>
@@ -64,7 +66,7 @@ class Program
             {
                 using HttpResponseMessage response = await httpClient.GetAsync(url);
                 var code = ((int)response.StatusCode).ToString();
-                var time = (DateTime.Now - start).TotalMilliseconds;
+                var time = (int)(DateTime.Now - start).TotalMilliseconds;
                 Console.WriteLine($"{url} {code} -- {time} ms");
                 if (response.IsSuccessStatusCode)
                 {
@@ -75,7 +77,7 @@ class Program
             }
             catch (Exception ex)
             {
-                var time = (DateTime.Now - start).TotalMilliseconds;
+                var time = (int)(DateTime.Now - start).TotalMilliseconds;
                 var code = ex.GetType().Name;
                 Console.Error.WriteLine($"{url}: {code} -- {time}ms");
                 results.Add((code, time));
