@@ -63,12 +63,13 @@ class Main {
     public static Result makeRequest(String url) {
         long startTime = System.currentTimeMillis();
         String code = "";
-        CompletableFuture<HttpResponse<Void>> future = null;
+        CompletableFuture<HttpResponse<String>> future = null;
 
         try {
             HttpRequest request = buildHttpRequest(url);
-            future = CLIENT.sendAsync(request, HttpResponse.BodyHandlers.discarding());
-            HttpResponse<Void> response = future.get(REQUEST_TIMEOUT, TimeUnit.SECONDS);
+            future = CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = future.get(REQUEST_TIMEOUT, TimeUnit.SECONDS);
+            String responseBody = response.body().replace("\0", "");
             code = Integer.toString(response.statusCode());
         } catch (TimeoutException e) {
             future.cancel(true);
