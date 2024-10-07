@@ -1,11 +1,44 @@
 using System.Collections.Concurrent;
 using System.Net;
 
+internal class BetterHttpClient
+{
+  private readonly HttpClient _client = new(new HttpClientHandler { AllowAutoRedirect = false });
+  private const int MaxRedirects = 10;
+  private const int TimeoutSeconds = 5;
+
+  public BetterHttpClient()
+  {
+    _client.DefaultRequestHeaders.Add("User-Agent", "crawler-test");
+    _client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+    _client.Timeout = TimeSpan.FromSeconds(TimeoutSeconds);
+  }
+
+  public async Task<HttpResponseMessage> GetAsync(string url)
+  {
+    for (var redirects = 0; redirects < MaxRedirects; redirects++)
+    {
+      var response = await _client.GetAsync(url);
+
+      if (response.StatusCode is not (HttpStatusCode.Moved or HttpStatusCode.Redirect))
+      {
+        return response;
+      }
+
+      url = new Uri(new Uri(url), response.Headers!.Location!.ToString()).ToString();
+    }
+
+    throw new TooManyRedirectsException();
+  }
+}
+
+internal class TooManyRedirectsException : Exception;
+
+
 class Program
 {
-    private static readonly HttpClient httpClient = new();
+    private static readonly BetterHttpClient httpClient = new();
     private static readonly int CONCURRENCY = int.Parse(Environment.GetEnvironmentVariable("CONCURRENCY") ?? "10");
-    private static readonly int REQUEST_TIMEOUT = int.Parse(Environment.GetEnvironmentVariable("REQUEST_TIMEOUT") ?? "5");
     private static readonly int LIMIT = int.Parse(Environment.GetEnvironmentVariable("LIMIT") ?? "1000");
     private static readonly string DATA_DIR = Environment.GetEnvironmentVariable("DATA_DIR") ?? "../data";
 
@@ -13,13 +46,8 @@ class Program
     {
         var start = DateTime.Now;
 
-        httpClient.DefaultRequestHeaders.Add("User-Agent", "crawler-test");
-        httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
-        httpClient.Timeout = TimeSpan.FromSeconds(REQUEST_TIMEOUT);
-
         Console.WriteLine("Starting crawl:");
         Console.WriteLine($" * CONCURRENCY: {CONCURRENCY}");
-        Console.WriteLine($" * REQUEST_TIMEOUT: {REQUEST_TIMEOUT}");
         Console.WriteLine($" * LIMIT: {LIMIT}");
 
         var urls = File.ReadLines(Path.Combine(DATA_DIR, "urls.txt")).Take(LIMIT);
@@ -73,7 +101,5 @@ class Program
             Console.WriteLine($"{aggregate.Key}: {aggregate.Value}");
         }
     }
+
 }
-
-
-
