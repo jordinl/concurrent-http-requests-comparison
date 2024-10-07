@@ -43,6 +43,7 @@ class Main {
 
     private static final HttpClient CLIENT = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.ALWAYS)
+            .version(HttpClient.Version.HTTP_1_1)
             .build();
 
     private static HttpRequest buildHttpRequest(String url) {
