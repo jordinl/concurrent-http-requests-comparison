@@ -78,7 +78,7 @@ class Program
             catch (Exception ex)
             {
                 var time = (int)(DateTime.Now - start).TotalMilliseconds;
-                var code = ex.GetType().Name;
+                var code = (ex.InnerException ?? ex).GetType().Name;
                 Console.Error.WriteLine($"{url}: {code} -- {time}ms");
                 results.Add((code, time));
             }

@@ -75,7 +75,8 @@ class Main {
             future.cancel(true);
             code = "TimeoutException";
         } catch (Exception e) {
-            code = e.getClass().getSimpleName();
+            var cause = e.getCause();
+            code = (cause != null ? cause : e).getClass().getSimpleName();
         } finally {
             semaphore.release();
             latch.countDown();
