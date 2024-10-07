@@ -119,7 +119,10 @@ class Main {
         latch.await();
 
         Map<String, Long> aggregates = results.stream()
-                .collect(Collectors.groupingBy(Result::getCode, Collectors.counting()));
+                .collect(Collectors.groupingBy(Result::getCode, Collectors.counting()))
+                .entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 
         double avgTime = results.stream()
                 .mapToLong(Result::getTime)
@@ -143,6 +146,9 @@ class Main {
         System.out.println("Median time: " + medianTime);
         System.out.println("Max time: " + maxTime);
         System.out.println("Total URLs: " + totalUrls);
-        System.out.println(aggregates);
+
+        for (Map.Entry<String, Long> entry : aggregates.entrySet()) {
+            System.out.println(entry.getKey() + ": " + entry.getValue());
+        }
     }
 }
