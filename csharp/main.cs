@@ -14,7 +14,7 @@ internal class BetterHttpClient
     _client.Timeout = TimeSpan.FromSeconds(TimeoutSeconds);
   }
 
-  public async Task<HttpResponseMessage> GetAsync(string url)
+  public async Task<HttpResponseMessage> GetAsync(Uri url)
   {
     for (var redirects = 0; redirects < MaxRedirects; redirects++)
     {
@@ -27,7 +27,7 @@ internal class BetterHttpClient
         return response;
       }
 
-      url = new Uri(response.RequestMessage.RequestUri, response.Headers!.Location!).ToString();
+      url = new Uri(response.RequestMessage.RequestUri, response.Headers!.Location!);
       response.Dispose();
     }
 
@@ -65,7 +65,7 @@ class Program
             var start = DateTime.Now;
             try
             {
-                using HttpResponseMessage response = await httpClient.GetAsync(url);
+                using var response = await httpClient.GetAsync(new Uri(url));
                 var code = ((int)response.StatusCode).ToString();
                 var time = (int)(DateTime.Now - start).TotalMilliseconds;
                 Console.WriteLine($"{url} {code} -- {time} ms");
