@@ -1,16 +1,15 @@
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 class Result {
   private String code;
@@ -58,7 +57,7 @@ class Main {
     return value != null ? Integer.parseInt(value) : defaultValue;
   }
 
-  public static Result makeRequest(String url) {
+  public static Result makeRequest(String url)  {
     long startTime = System.currentTimeMillis();
     String code = "";
 
@@ -71,9 +70,6 @@ class Main {
     } catch (Exception e) {
       var cause = e.getCause();
       code = (cause != null ? cause : e).getClass().getSimpleName();
-    } finally {
-      semaphore.release();
-      latch.countDown();
     }
 
     long endTime = System.currentTimeMillis();
@@ -82,7 +78,7 @@ class Main {
     return new Result(code, requestTime);
   }
 
-  public static void main(String[] args) throws FileNotFoundException, InterruptedException {
+  public static void main(String[] args) throws IOException {
     long start = System.currentTimeMillis();
 
     System.out.println("Starting");
@@ -90,32 +86,34 @@ class Main {
     System.out.println(" * CONCURRENCY: " + CONCURRENCY);
     System.out.println(" * REQUEST_TIMEOUT: " + REQUEST_TIMEOUT);
 
-    File file = new File(FILE_PATH);
-    Scanner reader = new Scanner(file);
+    var executor = Executors.newVirtualThreadPerTaskExecutor();
 
-    List<Result> results = new ArrayList<>();
-
-    int count = 0;
-    while (reader.hasNextLine() && count < LIMIT) {
-      String url = reader.nextLine();
-      semaphore.acquire();
-      Thread.startVirtualThread(() -> {
-        Result result = makeRequest(url);
-        synchronized (results) {
-          results.add(result);
+    var futures = Files.lines(Path.of(FILE_PATH))
+      .limit(LIMIT)
+      .map(url -> CompletableFuture.supplyAsync(() -> {
+        try {
+          semaphore.acquire();
+          return makeRequest(url);
+        } catch(InterruptedException e) {
+          throw new CompletionException(e);
+        } finally {
+          semaphore.release();
         }
-      });
-      count++;
-    }
+      }, executor))
+      .toList();
 
-    reader.close();
+    CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
 
-    // Wait for all virtual threads to complete
-    latch.await();
+    var results = futures.stream()
+      .map(CompletableFuture::join)
+      .toList();
 
-    Map<String, Long> aggregates = results.stream()
-      .collect(Collectors.groupingBy(Result::getCode, Collectors.counting()))
-      .entrySet().stream()
+    executor.shutdown();
+
+    var aggregates = results.stream()
+      .collect(Collectors.groupingByConcurrent(Result::getCode, Collectors.counting()))
+      .entrySet()
+      .stream()
       .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
       .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 
@@ -127,7 +125,8 @@ class Main {
     List<Long> times = results.stream()
       .map(Result::getTime)
       .sorted()
-      .collect(Collectors.toList());
+      .toList();
+
     long medianTime = times.get(times.size() / 2);
     long maxTime = times.stream()
       .max(Long::compareTo)
