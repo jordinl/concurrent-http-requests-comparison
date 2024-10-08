@@ -27,7 +27,7 @@ internal class BetterHttpClient
         return response;
       }
 
-      url = new Uri(new Uri(url), response.Headers!.Location!.ToString()).ToString();
+      url = new Uri(response.RequestMessage.RequestUri, response.Headers!.Location!).ToString();
       response.Dispose();
     }
 
