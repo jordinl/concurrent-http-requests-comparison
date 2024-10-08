@@ -1,6 +1,6 @@
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
@@ -10,10 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 class Result {
     private String code;
@@ -64,17 +61,13 @@ class Main {
     public static Result makeRequest(String url) {
         long startTime = System.currentTimeMillis();
         String code = "";
-        CompletableFuture<HttpResponse<String>> future = null;
 
         try {
             HttpRequest request = buildHttpRequest(url);
-            future = CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+            var future = CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             HttpResponse<String> response = future.get(REQUEST_TIMEOUT, TimeUnit.SECONDS);
             String responseBody = response.body().replace("\0", "");
             code = Integer.toString(response.statusCode());
-        } catch (TimeoutException e) {
-            future.cancel(true);
-            code = "TimeoutException";
         } catch (Exception e) {
             var cause = e.getCause();
             code = (cause != null ? cause : e).getClass().getSimpleName();
@@ -97,23 +90,23 @@ class Main {
         System.out.println(" * CONCURRENCY: " + CONCURRENCY);
         System.out.println(" * REQUEST_TIMEOUT: " + REQUEST_TIMEOUT);
 
-        File file = new File(FILE_PATH);
-        Scanner reader = new Scanner(file);
+      File file = new File(FILE_PATH);
+      Scanner reader = new Scanner(file);
 
-        List<Result> results = new ArrayList<>();
+      List<Result> results = new ArrayList<>();
 
-        Integer count = 0;
-        while (reader.hasNextLine() && count < LIMIT) {
-            String url = reader.nextLine();
-            semaphore.acquire();
-            Thread.startVirtualThread(() -> {
-                Result result = makeRequest(url);
-                synchronized (results) {
-                    results.add(result);
-                }
-            });
-            count++;
-        }
+      int count = 0;
+      while (reader.hasNextLine() && count < LIMIT) {
+        String url = reader.nextLine();
+        semaphore.acquire();
+        Thread.startVirtualThread(() -> {
+          Result result = makeRequest(url);
+          synchronized (results) {
+            results.add(result);
+          }
+        });
+        count++;
+      }
 
         reader.close();
 
