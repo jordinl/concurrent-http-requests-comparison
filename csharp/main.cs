@@ -18,7 +18,7 @@ internal class BetterHttpClient
   {
     for (var redirects = 0; redirects < MaxRedirects; redirects++)
     {
-      var response = await _client.GetAsync(url);
+      var response = await _client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
 
       var status = (int)response.StatusCode;
 
