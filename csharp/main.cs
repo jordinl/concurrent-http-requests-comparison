@@ -28,6 +28,7 @@ internal class BetterHttpClient
       }
 
       url = new Uri(new Uri(url), response.Headers!.Location!.ToString()).ToString();
+      response.Dispose();
     }
 
     throw new TooManyRedirectsException();
