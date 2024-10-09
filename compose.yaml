@@ -8,10 +8,11 @@ x-default: &default
     - CONCURRENCY
     - LIMIT
   restart: on-failure
-#  deploy:
-#    resources:
-#      limits:
-#        cpus: "4.0"
+  deploy:
+    resources:
+      limits:
+        cpus: "1.0"
+        memory: 2G
 
 services:
   deno-fetch:
@@ -26,6 +27,9 @@ services:
   java-http:
     <<: *default
     build: java/http
+  kotlin:
+    <<: *default
+    build: kotlin
   node-fetch:
     <<: *default
     build: node/fetch
