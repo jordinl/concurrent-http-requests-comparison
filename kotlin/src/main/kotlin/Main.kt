@@ -20,7 +20,6 @@ private val client = HttpClient.newBuilder()
 private val RequestBuilder = HttpRequest.newBuilder()
   .header("User-Agent", "crawler-test")
   .header("Accept-Encoding", "gzip, deflate, br")
-  .timeout(Duration.ofSeconds(5))
   .GET()
 
 fun main(args: Array<String>) = runBlocking(Dispatchers.IO) {
