@@ -5,11 +5,11 @@ COPY csharp.csproj .
 COPY main.cs .
 
 RUN dotnet restore
-RUN dotnet build
+RUN dotnet build --configuration Release
 
 FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
 WORKDIR /app
 
-COPY --from=build /app/bin/Debug/net8.0 .
+COPY --from=build /app/bin/Release/net8.0 .
 
 CMD ["dotnet", "csharp.dll"]
