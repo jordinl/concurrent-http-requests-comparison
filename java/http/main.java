@@ -47,7 +47,6 @@ class Main {
       .uri(URI.create(url))
       .header("User-Agent", "crawler-test")
       .header("Accept-Encoding", "gzip, deflate, br")
-      .timeout(Duration.ofSeconds(REQUEST_TIMEOUT))
       .GET()
       .build();
   }
@@ -63,7 +62,8 @@ class Main {
 
     try {
       HttpRequest request = buildHttpRequest(url);
-      var response = CLIENT.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+      var future = CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+      var response = future.get(5, TimeUnit.SECONDS);
       var responseBody = response.body().replace("\0", "");
       code = Integer.toString(response.statusCode());
     } catch (Exception e) {
