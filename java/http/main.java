@@ -63,9 +63,8 @@ class Main {
 
     try {
       HttpRequest request = buildHttpRequest(url);
-      var future = CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-      HttpResponse<String> response = future.get(REQUEST_TIMEOUT, TimeUnit.SECONDS);
-      String responseBody = response.body().replace("\0", "");
+      var response = CLIENT.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+      var responseBody = response.body().replace("\0", "");
       code = Integer.toString(response.statusCode());
     } catch (Exception e) {
       var cause = e.getCause();
