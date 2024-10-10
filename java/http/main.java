@@ -85,20 +85,11 @@ class Main {
     System.out.println(" * CONCURRENCY: " + CONCURRENCY);
     System.out.println(" * REQUEST_TIMEOUT: " + REQUEST_TIMEOUT);
 
-    var executor = Executors.newVirtualThreadPerTaskExecutor();
-
+    var executor = Executors.newFixedThreadPool(CONCURRENCY);
+    
     var futures = Files.lines(Path.of(FILE_PATH))
       .limit(LIMIT)
-      .map(url -> CompletableFuture.supplyAsync(() -> {
-        try {
-          semaphore.acquire();
-          return makeRequest(url);
-        } catch(InterruptedException e) {
-          throw new CompletionException(e);
-        } finally {
-          semaphore.release();
-        }
-      }, executor))
+      .map(url -> CompletableFuture.supplyAsync(() -> makeRequest(url), executor))
       .toList();
 
     CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
