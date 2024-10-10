@@ -10,14 +10,15 @@ internal class BetterHttpClient
   {
     _client.DefaultRequestHeaders.Add("User-Agent", "crawler-test");
     _client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
-    _client.Timeout = TimeSpan.FromSeconds(TimeoutSeconds);
   }
 
   public async Task<HttpResponseMessage> GetAsync(Uri url, CancellationToken cancellationToken)
   {
+    var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+    cancellationSource.CancelAfter(TimeSpan.FromSeconds(TimeoutSeconds));
     for (var redirects = 0; redirects < MaxRedirects; redirects++)
     {
-      var response = await _client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+      var response = await _client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationSource.Token);
 
       var status = (int)response.StatusCode;
 
