@@ -75,4 +75,4 @@ FROM eclipse-temurin:22-jre-jammy AS final
 #COPY --from=package build/target/app.jar app.jar
 COPY --from=package build/. .
 #
-CMD [ "java", "Main" ]
+CMD [ "java", "-Xmx1G", "Main" ]
