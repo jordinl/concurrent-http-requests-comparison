@@ -1,4 +1,3 @@
-import kotlinx.coroutines.*
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -6,8 +5,7 @@ import java.io.File
 import java.net.URI
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 
 private val CONCURRENCY = System.getenv("CONCURRENCY")?.toIntOrNull() ?: 10
 private val LIMIT = System.getenv("LIMIT")?.toIntOrNull() ?: 1000
@@ -22,10 +20,8 @@ private val RequestBuilder = HttpRequest.newBuilder()
   .header("Accept-Encoding", "gzip, deflate, br")
   .GET()
 
-fun main(args: Array<String>) = runBlocking(Dispatchers.IO) {
+fun main() {
   val start = Instant.now()
-
-  System.setProperty("networkaddress.cache.ttl", "5")
 
   println("Starting crawl:")
   println(" * CONCURRENCY: $CONCURRENCY")
@@ -34,10 +30,10 @@ fun main(args: Array<String>) = runBlocking(Dispatchers.IO) {
   val urls = File("$DATA_DIR/urls.txt").readLines().take(LIMIT)
 
   val results = ConcurrentLinkedQueue<Pair<String, Int>>()
-  val dispatcher = Dispatchers.IO.limitedParallelism(CONCURRENCY)
+  val executor = Executors.newFixedThreadPool(CONCURRENCY)
 
-  val jobs = urls.map { url ->
-    launch(dispatcher) {
+  val futures = urls.map { url ->
+    executor.submit {
       val startTime = Instant.now()
 
       val request = RequestBuilder.uri(URI.create(url)).build()
@@ -60,8 +56,9 @@ fun main(args: Array<String>) = runBlocking(Dispatchers.IO) {
       }
     }
   }
-  jobs.joinAll()
-  jobs.forEach { it.cancel() }
+
+  futures.forEach { it.get() }
+  executor.shutdown()
 
   val aggregates = results.groupBy({ it.first }, { it.second }).mapValues { it.value.count() }
   val avgTime = results.map { it.second }.average()
@@ -75,6 +72,4 @@ fun main(args: Array<String>) = runBlocking(Dispatchers.IO) {
   aggregates.entries.sortedByDescending { it.value }.forEach { (code, count) ->
     println("$code: $count")
   }
-
-  client.close()
 }
