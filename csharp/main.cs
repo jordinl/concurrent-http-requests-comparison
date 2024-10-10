@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Net;
 
 internal class BetterHttpClient
 {
@@ -14,11 +13,11 @@ internal class BetterHttpClient
     _client.Timeout = TimeSpan.FromSeconds(TimeoutSeconds);
   }
 
-  public async Task<HttpResponseMessage> GetAsync(Uri url)
+  public async Task<HttpResponseMessage> GetAsync(Uri url, CancellationToken cancellationToken)
   {
     for (var redirects = 0; redirects < MaxRedirects; redirects++)
     {
-      var response = await _client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+      var response = await _client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
       var status = (int)response.StatusCode;
 
@@ -56,16 +55,14 @@ class Program
         var urls = File.ReadLines(Path.Combine(DATA_DIR, "urls.txt")).Take(LIMIT);
 
         var results = new ConcurrentBag<(string Code, int Time)>();
-        var semaphore = new SemaphoreSlim(CONCURRENCY, CONCURRENCY);
+        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = CONCURRENCY };
 
-        var tasks = urls.Select(async url =>
+        await Parallel.ForEachAsync(urls, parallelOptions, async (url, cancellationToken) =>
         {
-            await semaphore.WaitAsync();
-
             var start = DateTime.Now;
             try
             {
-                using var response = await httpClient.GetAsync(new Uri(url));
+                using var response = await httpClient.GetAsync(new Uri(url), cancellationToken);
                 var code = ((int)response.StatusCode).ToString();
                 var time = (int)(DateTime.Now - start).TotalMilliseconds;
                 Console.WriteLine($"{url} {code} -- {time} ms");
@@ -83,12 +80,7 @@ class Program
                 Console.Error.WriteLine($"{url}: {code} -- {time}ms");
                 results.Add((code, time));
             }
-            finally
-            {
-                semaphore.Release();
-            }
         });
-        await Task.WhenAll(tasks);
 
         var aggregates = results.GroupBy(r => r.Code).ToDictionary(g => g.Key, g => g.Count());
         var avgTime = results.Average(r => r.Time);
