@@ -25,4 +25,4 @@ WORKDIR /app
 COPY --from=build /app/target/crawler.jar .
 
 # Set the entry point to run the compiled Kotlin application
-ENTRYPOINT ["java", "-jar", "crawler.jar"]
+ENTRYPOINT ["java", "-Xmx1G", "-jar", "crawler.jar"]
