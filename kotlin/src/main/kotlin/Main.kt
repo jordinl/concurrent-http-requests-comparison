@@ -36,24 +36,28 @@ fun main() {
     executor.submit {
       val startTime = Instant.now()
 
-      val request = RequestBuilder.uri(URI.create(url)).build()
-
-      try {
-        val future = client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-        val response = future.get(5, TimeUnit.SECONDS)
-        val code = response.statusCode().toString()
-        val time = Duration.between(startTime, Instant.now()).toMillis().toInt()
-        println("$url $code -- $time ms")
-        if (response.statusCode() in 200 until 300) {
-          val body = response.body()?.replace("\u0000", "")
+      client.sendAsync(RequestBuilder.uri(URI.create(url)).build(), HttpResponse.BodyHandlers.ofString())
+        .orTimeout(5, TimeUnit.SECONDS)
+        .thenApply { response ->
+          val code = response.statusCode().toString()
+          val time = Duration.between(startTime, Instant.now()).toMillis().toInt()
+          println("$url $code -- $time ms")
+          if (response.statusCode() in 200 until 300) {
+            val body = response.body()?.replace("\u0000", "")
+          }
+          code to time
         }
-        results.add(code to time)
-      } catch (ex: Exception) {
-        val time = Duration.between(startTime, Instant.now()).toMillis().toInt()
-        val code = (ex.cause ?: ex).javaClass.simpleName
-        System.err.println("$url: $code -- ${time}ms")
-        results.add(code to time)
-      }
+        .exceptionally { ex ->
+          val startTime = Instant.now()
+          val time = Duration.between(startTime, Instant.now()).toMillis().toInt()
+          val code = (ex.cause ?: ex).javaClass.simpleName
+          System.err.println("$url: $code -- ${time}ms")
+          code to time
+        }
+        .thenAccept { (code, time) ->
+          results.add(code to time)
+        }
+        .get()
     }
   }
 
