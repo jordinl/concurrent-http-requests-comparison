@@ -56,25 +56,25 @@ class Main {
     return value != null ? Integer.parseInt(value) : defaultValue;
   }
 
-  public static Result makeRequest(String url)  {
+  public static Result makeRequest(String url) {
     long startTime = System.currentTimeMillis();
-    String code = "";
 
-    try {
-      HttpRequest request = buildHttpRequest(url);
-      var future = CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-      var response = future.get(5, TimeUnit.SECONDS);
-      var responseBody = response.body().replace("\0", "");
-      code = Integer.toString(response.statusCode());
-    } catch (Exception e) {
-      var cause = e.getCause();
-      code = (cause != null ? cause : e).getClass().getSimpleName();
-    }
+    CompletableFuture<Result> future = CLIENT.sendAsync(buildHttpRequest(url), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
+      .orTimeout(5, TimeUnit.SECONDS)
+      .thenApply(response -> {
+        var responseBody = response.body().replace("\0", "");
+        var statusCode = Integer.toString(response.statusCode());
+        return new Result(statusCode, System.currentTimeMillis() - startTime);
+      })
+      .exceptionally(ex -> {
+        var cause = ex.getCause();
+        var code = (cause != null ? cause : ex).getClass().getSimpleName();
+        return new Result(code, System.currentTimeMillis() - startTime);
+      });
 
-    long endTime = System.currentTimeMillis();
-    long requestTime = endTime - startTime;
-    System.out.println("URL " + url + " -- Code: " + code + " -- Request Time: " + requestTime + "ms");
-    return new Result(code, requestTime);
+    Result result = future.join();
+    System.out.println("URL " + url + " -- Code: " + result.getCode() + " -- Request Time: " + result.getTime() + "ms");
+    return result;
   }
 
   public static void main(String[] args) throws IOException {
@@ -86,7 +86,7 @@ class Main {
     System.out.println(" * REQUEST_TIMEOUT: " + REQUEST_TIMEOUT);
 
     var executor = Executors.newFixedThreadPool(CONCURRENCY);
-    
+
     var futures = Files.lines(Path.of(FILE_PATH))
       .limit(LIMIT)
       .map(url -> CompletableFuture.supplyAsync(() -> makeRequest(url), executor))
