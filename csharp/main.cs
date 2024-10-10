@@ -39,36 +39,36 @@ internal class TooManyRedirectsException : Exception;
 
 class Program
 {
-  private static readonly BetterHttpClient httpClient = new();
-  private static readonly int CONCURRENCY = int.Parse(Environment.GetEnvironmentVariable("CONCURRENCY") ?? "10");
-  private static readonly int LIMIT = int.Parse(Environment.GetEnvironmentVariable("LIMIT") ?? "1000");
-  private static readonly string DATA_DIR = Environment.GetEnvironmentVariable("DATA_DIR") ?? "../data";
+  private static readonly BetterHttpClient HttpClient = new();
+  private static readonly int Concurrency = int.Parse(Environment.GetEnvironmentVariable("CONCURRENCY") ?? "10");
+  private static readonly int Limit = int.Parse(Environment.GetEnvironmentVariable("LIMIT") ?? "1000");
+  private static readonly string DataDir = Environment.GetEnvironmentVariable("DATA_DIR") ?? "../data";
 
   static async Task Main()
   {
     var start = DateTime.Now;
 
     Console.WriteLine("Starting crawl:");
-    Console.WriteLine($" * CONCURRENCY: {CONCURRENCY}");
-    Console.WriteLine($" * LIMIT: {LIMIT}");
+    Console.WriteLine($" * CONCURRENCY: {Concurrency}");
+    Console.WriteLine($" * LIMIT: {Limit}");
 
-    var urls = File.ReadLines(Path.Combine(DATA_DIR, "urls.txt")).Take(LIMIT);
+    var urls = File.ReadLines(Path.Combine(DataDir, "urls.txt")).Take(Limit);
 
     var results = new ConcurrentBag<(string Code, int Time)>();
-    var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = CONCURRENCY };
+    var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Concurrency };
 
     await Parallel.ForEachAsync(urls, parallelOptions, async (url, cancellationToken) =>
     {
       var start = DateTime.Now;
       try
       {
-        using var response = await httpClient.GetAsync(new Uri(url), cancellationToken);
+        using var response = await HttpClient.GetAsync(new Uri(url), cancellationToken);
         var code = ((int)response.StatusCode).ToString();
         var time = (int)(DateTime.Now - start).TotalMilliseconds;
         Console.WriteLine($"{url} {code} -- {time} ms");
         if (response.IsSuccessStatusCode)
         {
-          var body = await response.Content.ReadAsStringAsync();
+          var body = await response.Content.ReadAsStringAsync(cancellationToken);
           var _out = body.Replace("\0", "");
         }
 
