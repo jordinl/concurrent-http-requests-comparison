@@ -14,6 +14,7 @@ class Main {
   private static final Integer LIMIT = getEnv("LIMIT", 1000);
   private static final Integer CONCURRENCY = getEnv("CONCURRENCY", 10);
   private static final String FILE_PATH = "/mnt/appdata/urls.txt";
+  private static final Semaphore semaphore = new Semaphore(CONCURRENCY);
 
   private static final HttpClient CLIENT = HttpClient.newBuilder()
     .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -34,8 +35,14 @@ class Main {
     return value != null ? Integer.parseInt(value) : defaultValue;
   }
 
-  public static AbstractMap.SimpleEntry<String, Long> makeRequest(String url) {
+  public static CompletableFuture<AbstractMap.SimpleEntry<String, Long>> makeRequest(String url) {
     long startTime = System.currentTimeMillis();
+    try {
+      semaphore.acquire();
+    } catch (InterruptedException e) {
+      semaphore.release();
+      return CompletableFuture.completedFuture(new AbstractMap.SimpleEntry<>("InterruptedException", 0L));
+    }
 
     return CLIENT.sendAsync(buildHttpRequest(url), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
       .orTimeout(5, TimeUnit.SECONDS)
@@ -52,7 +59,7 @@ class Main {
         System.out.println("URL " + url + " -- Code: " + code + " -- Request Time: " + time + "ms");
         return new AbstractMap.SimpleEntry<>(code, time);
       })
-      .join();
+      .whenComplete((_, _) -> semaphore.release());
   }
 
   public static void main(String[] args) throws IOException {
@@ -62,18 +69,16 @@ class Main {
     System.out.println(" * LIMIT: " + LIMIT);
     System.out.println(" * CONCURRENCY: " + CONCURRENCY);
 
-    var executor = Executors.newFixedThreadPool(CONCURRENCY);
-
     var futures = Files.lines(Path.of(FILE_PATH))
       .limit(LIMIT)
-      .map(url -> CompletableFuture.supplyAsync(() -> makeRequest(url), executor))
+      .map(Main::makeRequest)
       .toList();
+
+    CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
 
     var results = futures.stream()
       .map(CompletableFuture::join)
       .toList();
-
-    executor.shutdown();
 
     var aggregates = results.stream()
       .collect(Collectors.groupingByConcurrent(AbstractMap.SimpleEntry::getKey, Collectors.counting()))
