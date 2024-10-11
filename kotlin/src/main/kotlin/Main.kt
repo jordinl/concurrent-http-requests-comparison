@@ -20,6 +20,29 @@ private val RequestBuilder = HttpRequest.newBuilder()
   .header("Accept-Encoding", "gzip, deflate, br")
   .GET()
 
+private val semaphore = Semaphore(CONCURRENCY)
+
+private fun makeRequest(url: String): CompletableFuture<Result> {
+  semaphore.acquire()
+  val startTime = Instant.now()
+
+  return client.sendAsync(RequestBuilder.uri(URI.create(url)).build(), HttpResponse.BodyHandlers.ofString())
+    .orTimeout(5, TimeUnit.SECONDS)
+    .thenApply { response ->
+      if (response.statusCode() in 200 until 300) {
+        val body = response.body()?.replace("\u0000", "")
+      }
+      response.statusCode().toString()
+    }
+    .exceptionally { ex -> (ex.cause ?: ex).javaClass.simpleName }
+    .thenApply { code ->
+      val time = Duration.between(startTime, Instant.now()).toMillis()
+      println("$url $code -- $time ms")
+      Result(code, time)
+    }
+    .whenComplete { _, _ -> semaphore.release() }
+}
+
 data class Result(val code: String, val time: Long)
 
 fun main() {
@@ -31,31 +54,9 @@ fun main() {
 
   val urls = File("$DATA_DIR/urls.txt").readLines().take(LIMIT)
 
-  val executor = Executors.newFixedThreadPool(CONCURRENCY)
-
-  val futures : List<CompletableFuture<Result>> = urls.map { url ->
-    CompletableFuture.supplyAsync({
-      val startTime = Instant.now()
-
-      client.sendAsync(RequestBuilder.uri(URI.create(url)).build(), HttpResponse.BodyHandlers.ofString())
-        .orTimeout(5, TimeUnit.SECONDS)
-        .thenApply { response ->
-          if (response.statusCode() in 200 until 300) {
-            val body = response.body()?.replace("\u0000", "")
-          }
-          response.statusCode().toString()
-        }
-        .exceptionally { ex -> (ex.cause ?: ex).javaClass.simpleName }
-        .thenApply { code ->
-          val time = Duration.between(startTime, Instant.now()).toMillis()
-          println("$url $code -- $time ms")
-          Result(code, time)
-        }
-        .join()
-    }, executor)
-  }
-
-  var results = futures.map { it.join() }
+  val futures = urls.map { makeRequest(it) }
+  CompletableFuture.allOf(*futures.toTypedArray()).join();
+  val results = futures.map { it.join() };
   val aggregates = results.groupBy({ it.code }, { it.time }).mapValues { it.value.count() }
   val avgTime = results.map { it.time }.average()
   val medianTime = results.sortedBy { it.time }[results.size / 2].time
@@ -68,6 +69,4 @@ fun main() {
   aggregates.entries.sortedByDescending { it.value }.forEach { (code, count) ->
     println("$code: $count")
   }
-
-  executor.shutdown()
 }
