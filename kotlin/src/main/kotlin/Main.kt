@@ -33,7 +33,7 @@ fun main() {
 
   val executor = Executors.newFixedThreadPool(CONCURRENCY)
 
-  val futures = urls.map { url ->
+  val futures : List<CompletableFuture<Result>> = urls.map { url ->
     CompletableFuture.supplyAsync({
       val startTime = Instant.now()
 
