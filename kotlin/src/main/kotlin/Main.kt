@@ -20,6 +20,8 @@ private val RequestBuilder = HttpRequest.newBuilder()
   .header("Accept-Encoding", "gzip, deflate, br")
   .GET()
 
+data class Result(val code: String, val time: Long)
+
 fun main() {
   val start = Instant.now()
 
@@ -29,44 +31,34 @@ fun main() {
 
   val urls = File("$DATA_DIR/urls.txt").readLines().take(LIMIT)
 
-  val results = ConcurrentLinkedQueue<Pair<String, Int>>()
   val executor = Executors.newFixedThreadPool(CONCURRENCY)
 
   val futures = urls.map { url ->
-    executor.submit {
+    CompletableFuture.supplyAsync({
       val startTime = Instant.now()
 
       client.sendAsync(RequestBuilder.uri(URI.create(url)).build(), HttpResponse.BodyHandlers.ofString())
         .orTimeout(5, TimeUnit.SECONDS)
         .thenApply { response ->
-          val code = response.statusCode().toString()
-          val time = Duration.between(startTime, Instant.now()).toMillis().toInt()
-          println("$url $code -- $time ms")
           if (response.statusCode() in 200 until 300) {
             val body = response.body()?.replace("\u0000", "")
           }
-          code to time
+          response.statusCode().toString()
         }
-        .exceptionally { ex ->
-          val startTime = Instant.now()
-          val time = Duration.between(startTime, Instant.now()).toMillis().toInt()
-          val code = (ex.cause ?: ex).javaClass.simpleName
-          System.err.println("$url: $code -- ${time}ms")
-          code to time
+        .exceptionally { ex -> (ex.cause ?: ex).javaClass.simpleName }
+        .thenApply { code ->
+          val time = Duration.between(startTime, Instant.now()).toMillis()
+          println("$url $code -- $time ms")
+          Result(code, time)
         }
-        .thenAccept { (code, time) ->
-          results.add(code to time)
-        }
-        .get()
-    }
+        .join()
+    }, executor)
   }
 
-  futures.forEach { it.get() }
-  executor.shutdown()
-
-  val aggregates = results.groupBy({ it.first }, { it.second }).mapValues { it.value.count() }
-  val avgTime = results.map { it.second }.average()
-  val medianTime = results.sortedBy { it.second }[results.size / 2].second
+  var results = futures.map { it.join() }
+  val aggregates = results.groupBy({ it.code }, { it.time }).mapValues { it.value.count() }
+  val avgTime = results.map { it.time }.average()
+  val medianTime = results.sortedBy { it.time }[results.size / 2].time
 
   println("Total time: ${Duration.between(start, Instant.now()).seconds}s")
   println("Average time: $avgTime")
@@ -76,4 +68,6 @@ fun main() {
   aggregates.entries.sortedByDescending { it.value }.forEach { (code, count) ->
     println("$code: $count")
   }
+
+  executor.shutdown()
 }
