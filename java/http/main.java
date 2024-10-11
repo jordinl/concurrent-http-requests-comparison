@@ -9,33 +9,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
-import java.time.Duration;
-
-class Result {
-  private String code;
-  private long time;
-
-  public Result(String code, long time) {
-    this.code = code;
-    this.time = time;
-  }
-
-  public String getCode() {
-    return code;
-  }
-
-  public long getTime() {
-    return time;
-  }
-}
 
 class Main {
   private static final Integer LIMIT = getEnv("LIMIT", 1000);
   private static final Integer CONCURRENCY = getEnv("CONCURRENCY", 10);
-  private static final Integer REQUEST_TIMEOUT = getEnv("REQUEST_TIMEOUT", 5);
   private static final String FILE_PATH = "/mnt/appdata/urls.txt";
-  public static CountDownLatch latch = new CountDownLatch(LIMIT);
-  public static Semaphore semaphore = new Semaphore(CONCURRENCY);
 
   private static final HttpClient CLIENT = HttpClient.newBuilder()
     .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -56,24 +34,23 @@ class Main {
     return value != null ? Integer.parseInt(value) : defaultValue;
   }
 
-  public static Result makeRequest(String url) {
+  public static AbstractMap.SimpleEntry<String, Long> makeRequest(String url) {
     long startTime = System.currentTimeMillis();
 
     return CLIENT.sendAsync(buildHttpRequest(url), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
       .orTimeout(5, TimeUnit.SECONDS)
       .thenApply(response -> {
         var responseBody = response.body().replace("\0", "");
-        var statusCode = Integer.toString(response.statusCode());
-        return new Result(statusCode, System.currentTimeMillis() - startTime);
+        return Integer.toString(response.statusCode());
       })
       .exceptionally(ex -> {
         var cause = ex.getCause();
-        var code = (cause != null ? cause : ex).getClass().getSimpleName();
-        return new Result(code, System.currentTimeMillis() - startTime);
+        return (cause != null ? cause : ex).getClass().getSimpleName();
       })
-      .thenApply(result -> {
-        System.out.println("URL " + url + " -- Code: " + result.getCode() + " -- Request Time: " + result.getTime() + "ms");
-        return result;
+      .thenApply(code -> {
+        var time = (System.currentTimeMillis() - startTime);
+        System.out.println("URL " + url + " -- Code: " + code + " -- Request Time: " + time + "ms");
+        return new AbstractMap.SimpleEntry<>(code, time);
       })
       .join();
   }
@@ -84,7 +61,6 @@ class Main {
     System.out.println("Starting");
     System.out.println(" * LIMIT: " + LIMIT);
     System.out.println(" * CONCURRENCY: " + CONCURRENCY);
-    System.out.println(" * REQUEST_TIMEOUT: " + REQUEST_TIMEOUT);
 
     var executor = Executors.newFixedThreadPool(CONCURRENCY);
 
@@ -100,29 +76,29 @@ class Main {
     executor.shutdown();
 
     var aggregates = results.stream()
-      .collect(Collectors.groupingByConcurrent(Result::getCode, Collectors.counting()))
+      .collect(Collectors.groupingByConcurrent(AbstractMap.SimpleEntry::getKey, Collectors.counting()))
       .entrySet()
       .stream()
       .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
       .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 
-    double avgTime = results.stream()
-      .mapToLong(Result::getTime)
-      .average()
-      .orElse(0);
-
-    List<Long> times = results.stream()
-      .map(Result::getTime)
+    var times = results.stream()
+      .map(AbstractMap.SimpleEntry::getValue)
       .sorted()
       .toList();
 
-    long medianTime = times.get(times.size() / 2);
-    long maxTime = times.stream()
+    var avgTime = times.stream()
+      .mapToDouble(Long::doubleValue)
+      .average()
+      .orElse(0);
+
+    var medianTime = times.get(times.size() / 2);
+    var maxTime = times.stream()
       .max(Long::compareTo)
       .orElse(0L);
 
-    long totalTime = (System.currentTimeMillis() - start) / 1000;
-    long totalUrls = aggregates.values().stream().mapToLong(Long::longValue).sum();
+    var totalTime = (System.currentTimeMillis() - start) / 1000;
+    var totalUrls = aggregates.values().stream().mapToLong(Long::longValue).sum();
 
     System.out.println("Total time: " + totalTime + "s");
     System.out.println("Average time: " + avgTime);
