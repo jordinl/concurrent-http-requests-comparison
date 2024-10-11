@@ -59,7 +59,7 @@ class Main {
   public static Result makeRequest(String url) {
     long startTime = System.currentTimeMillis();
 
-    CompletableFuture<Result> future = CLIENT.sendAsync(buildHttpRequest(url), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
+    return CLIENT.sendAsync(buildHttpRequest(url), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
       .orTimeout(5, TimeUnit.SECONDS)
       .thenApply(response -> {
         var responseBody = response.body().replace("\0", "");
@@ -70,11 +70,12 @@ class Main {
         var cause = ex.getCause();
         var code = (cause != null ? cause : ex).getClass().getSimpleName();
         return new Result(code, System.currentTimeMillis() - startTime);
-      });
-
-    Result result = future.join();
-    System.out.println("URL " + url + " -- Code: " + result.getCode() + " -- Request Time: " + result.getTime() + "ms");
-    return result;
+      })
+      .thenApply(result -> {
+        System.out.println("URL " + url + " -- Code: " + result.getCode() + " -- Request Time: " + result.getTime() + "ms");
+        return result;
+      })
+      .join();
   }
 
   public static void main(String[] args) throws IOException {
@@ -91,8 +92,6 @@ class Main {
       .limit(LIMIT)
       .map(url -> CompletableFuture.supplyAsync(() -> makeRequest(url), executor))
       .toList();
-
-    CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
 
     var results = futures.stream()
       .map(CompletableFuture::join)
