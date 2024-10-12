@@ -2,14 +2,15 @@ using System.Collections.Concurrent;
 
 internal class BetterHttpClient
 {
-  private readonly HttpClient _client = new(new HttpClientHandler { AllowAutoRedirect = false });
+  private static readonly SocketsHttpHandler HttpHandler = new() { PooledConnectionIdleTimeout = TimeSpan.FromSeconds(1), AllowAutoRedirect = false };
+  private static readonly HttpClient Client = new(HttpHandler);
   private const int MaxRedirects = 10;
   private const int TimeoutSeconds = 5;
 
   public BetterHttpClient()
   {
-    _client.DefaultRequestHeaders.Add("User-Agent", "crawler-test");
-    _client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+    Client.DefaultRequestHeaders.Add("User-Agent", "crawler-test");
+    Client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
   }
 
   public async Task<HttpResponseMessage> GetAsync(Uri url, CancellationToken cancellationToken)
@@ -18,7 +19,7 @@ internal class BetterHttpClient
     cancellationSource.CancelAfter(TimeSpan.FromSeconds(TimeoutSeconds));
     for (var redirects = 0; redirects < MaxRedirects; redirects++)
     {
-      var response = await _client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationSource.Token);
+      var response = await Client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationSource.Token);
 
       var status = (int)response.StatusCode;
 
