@@ -15,6 +15,9 @@ x-default: &default
         memory: 2G
 
 services:
+  bun-fetch:
+    <<: *default
+    build: bun/fetch
   deno-fetch:
     <<: *default
     build: deno/fetch
