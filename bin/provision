@@ -6,8 +6,6 @@ ssh -T -o StrictHostKeyChecking=no "$credentials" << EOF
     curl -fsSL https://get.docker.com | bash
     sudo usermod -aG docker \${USER}
 
-    sudo apt install 7zip -y
-
     mkdir test
     cd test
 
