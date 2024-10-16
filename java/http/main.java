@@ -1,19 +1,19 @@
-import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
+import java.util.function.BiConsumer;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
 
 class Main {
-  private static final Integer LIMIT = getEnv("LIMIT", 1000);
+  private static final String UserAgent = System.getenv().getOrDefault("USER_AGENT", "java-http-client");
   private static final Integer CONCURRENCY = getEnv("CONCURRENCY", 10);
-  private static final String FILE_PATH = "/mnt/appdata/urls.txt";
+  private static final Integer RequestTimeout = getEnv("REQUEST_TIMEOUT", 5);
   private static final Semaphore semaphore = new Semaphore(CONCURRENCY);
 
   private static final HttpClient CLIENT = HttpClient.newBuilder()
@@ -24,7 +24,7 @@ class Main {
   private static HttpRequest buildHttpRequest(String url) {
     return HttpRequest.newBuilder()
       .uri(URI.create(url))
-      .header("User-Agent", "crawler-test")
+      .header("User-Agent", UserAgent)
       .header("Accept-Encoding", "gzip, deflate, br")
       .GET()
       .build();
@@ -35,84 +35,44 @@ class Main {
     return value != null ? Integer.parseInt(value) : defaultValue;
   }
 
-  public static CompletableFuture<AbstractMap.SimpleEntry<String, Long>> makeRequest(String url) {
-    long startTime = System.currentTimeMillis();
+  public static CompletableFuture<Void> makeRequest(String url) {
+    var startTime = Instant.now();
+
+    BiConsumer<String, Integer> onComplete = (code, bodyLength) -> {
+      var duration = Duration.between(startTime, Instant.now()).toMillis();
+      System.out.println(url + "," + code + "," + startTime + "," + duration + "," + bodyLength);
+    };
+
     try {
       semaphore.acquire();
     } catch (InterruptedException e) {
-      semaphore.release();
-      return CompletableFuture.completedFuture(new AbstractMap.SimpleEntry<>("InterruptedException", 0L));
+      onComplete.accept("InterruptedException", 0);
+      return CompletableFuture.completedFuture(null);
     }
 
     return CLIENT.sendAsync(buildHttpRequest(url), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
-      .orTimeout(5, TimeUnit.SECONDS)
-      .thenApply(response -> {
-        var responseBody = response.body().replace("\0", "");
-        return Integer.toString(response.statusCode());
+      .orTimeout(RequestTimeout, TimeUnit.SECONDS)
+      .thenAccept(response -> {
+        var bodyLength = response.body().length();
+        var code = Integer.toString(response.statusCode());
+        onComplete.accept(code, bodyLength);
       })
       .exceptionally(ex -> {
         var cause = ex.getCause();
-        return (cause != null ? cause : ex).getClass().getSimpleName();
-      })
-      .thenApply(code -> {
-        var time = (System.currentTimeMillis() - startTime);
-        System.out.println("URL " + url + " -- Code: " + code + " -- Request Time: " + time + "ms");
-        return new AbstractMap.SimpleEntry<>(code, time);
+        var code = (cause != null ? cause : ex).getClass().getSimpleName();
+        onComplete.accept(code, 0);
+        return null;
       })
       .whenComplete((_, _) -> semaphore.release());
   }
 
-  public static void main(String[] args) throws IOException {
-    long start = System.currentTimeMillis();
+  public static void main(String[] args) {
+    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-    System.out.println("Starting");
-    System.out.println(" * LIMIT: " + LIMIT);
-    System.out.println(" * CONCURRENCY: " + CONCURRENCY);
-
-    var futures = Files.lines(Path.of(FILE_PATH))
-      .limit(LIMIT)
+    var futures = reader.lines()
       .map(Main::makeRequest)
       .toList();
 
     CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
-
-    var results = futures.stream()
-      .map(CompletableFuture::join)
-      .toList();
-
-    var aggregates = results.stream()
-      .collect(Collectors.groupingByConcurrent(AbstractMap.SimpleEntry::getKey, Collectors.counting()))
-      .entrySet()
-      .stream()
-      .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
-
-    var times = results.stream()
-      .map(AbstractMap.SimpleEntry::getValue)
-      .sorted()
-      .toList();
-
-    var avgTime = times.stream()
-      .mapToDouble(Long::doubleValue)
-      .average()
-      .orElse(0);
-
-    var medianTime = times.get(times.size() / 2);
-    var maxTime = times.stream()
-      .max(Long::compareTo)
-      .orElse(0L);
-
-    var totalTime = (System.currentTimeMillis() - start) / 1000;
-    var totalUrls = aggregates.values().stream().mapToLong(Long::longValue).sum();
-
-    System.out.println("Total time: " + totalTime + "s");
-    System.out.println("Average time: " + avgTime);
-    System.out.println("Median time: " + medianTime);
-    System.out.println("Max time: " + maxTime);
-    System.out.println("Total URLs: " + totalUrls);
-
-    for (Map.Entry<String, Long> entry : aggregates.entrySet()) {
-      System.out.println(entry.getKey() + ": " + entry.getValue());
-    }
   }
 }
