@@ -7,6 +7,8 @@ x-default: &default
     - DATA_DIR=/mnt/appdata
     - CONCURRENCY
     - LIMIT
+    - REQUEST_TIMEOUT=5
+    - USER_AGENT=http-clients-test
   restart: on-failure
   deploy:
     resources:
