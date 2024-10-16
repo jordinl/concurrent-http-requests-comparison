@@ -33,6 +33,7 @@ const counts = results.reduce((agg, {code}) => {
   return {...agg, [shortCode]: agg[shortCode] + 1};
 }, defaultCounts);
 const avgDuration = results.reduce((agg, r) => agg + r.duration, 0) / results.length;
+const maxDuration = Math.max(...results.map(r => r.duration));
 const startTime = Math.min(...results.map(r => r.startTime));
 const endTime = Math.max(...results.map(r => r.startTime + r.duration));
 const totalTime = endTime - startTime;
@@ -40,6 +41,7 @@ const totalTime = endTime - startTime;
 const aggregates = {
   totalTime,
   avgDuration: Math.round(avgDuration),
+  maxDuration,
   totalUrls: Object.values(counts).reduce((agg, count) => agg + count, 0),
   okReqsSecond: Math.round(counts['2xx'] / totalTime * 1000),
   ...counts
