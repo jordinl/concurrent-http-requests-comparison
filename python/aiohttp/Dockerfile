@@ -28,6 +28,3 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Copy the source code into the container.
 COPY . .
-
-# Run the application.
-CMD ["python", "main.py"]

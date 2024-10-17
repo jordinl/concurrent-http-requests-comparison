@@ -49,6 +49,7 @@ services:
   python-aiohttp:
     <<: *default
     build: python/aiohttp
+    command: [ "python", "main.py" ]
   ruby-async-http:
     <<: *default
     build: ruby/async-http
