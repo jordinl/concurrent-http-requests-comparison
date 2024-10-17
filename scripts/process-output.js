@@ -15,13 +15,14 @@ const print = (message, color = "white") => {
 let results = []
 
 for await (const line of createInterface({input: process.stdin})) {
-  const [url, code, startTimeStr, durationStr, length] = line.split(",");
+  const [url, code, startTimeStr, durationStr, bodyLengthStr] = line.split(",");
   const startTime = Date.parse(startTimeStr);
   const duration = parseInt(durationStr);
+  const bodyLength = parseInt(bodyLengthStr);
   const color = code[0] === "2" ? "green" : (code.match(/^[0-9]{3}$/) ? "yellow" : "red");
   print(`[${code}] ${url}: ${duration}ms`, color);
 
-  results.push({code, startTime, duration});
+  results.push({code, startTime, duration, bodyLength});
 }
 
 const defaultCounts = ['2xx', '3xx', '4xx', '5xx', 'Exception'].reduce((agg, key) => {
@@ -37,6 +38,7 @@ const maxDuration = Math.max(...results.map(r => r.duration));
 const startTime = Math.min(...results.map(r => r.startTime));
 const endTime = Math.max(...results.map(r => r.startTime + r.duration));
 const totalTime = endTime - startTime;
+const sumBodyLength = results.reduce((agg, r) => agg + (r.code[0] === '2' ? r.bodyLength : 0), 0);
 
 const aggregates = {
   totalTime,
@@ -44,6 +46,7 @@ const aggregates = {
   maxDuration,
   totalUrls: Object.values(counts).reduce((agg, count) => agg + count, 0),
   okReqsSecond: Math.round(counts['2xx'] / totalTime * 1000),
+  avgBodyLength: Math.round(sumBodyLength / counts['2xx']),
   ...counts
 }
 
