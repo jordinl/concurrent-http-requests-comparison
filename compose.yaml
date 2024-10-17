@@ -1,15 +1,10 @@
 x-default: &default
-  init: true
+  entrypoint: "timeout ${DURATION:-600}"
   network_mode: host
-  volumes:
-    - ./data:/mnt/appdata
   environment:
-    - DATA_DIR=/mnt/appdata
     - CONCURRENCY
-    - LIMIT
     - REQUEST_TIMEOUT=5
     - USER_AGENT=http-clients-test
-  restart: on-failure
   deploy:
     resources:
       limits:
@@ -23,27 +18,34 @@ services:
   deno-fetch:
     <<: *default
     build: deno/fetch
+    command: [ "deno", "run", "--allow-env", "--allow-net", "--unstable-http", "main.js" ]
   csharp:
     <<: *default
     build: csharp
+    command: [ "dotnet", "csharp.dll" ]
   go-http:
     <<: *default
     build: go/http
+    command: [ "/bin/run" ]
   java-http:
     <<: *default
     build: java/http
+    command: [ "java", "-Xmx1G", "Main" ]
   kotlin:
     <<: *default
     build: kotlin
+    command: [ "java", "-Xmx1G", "-jar", "crawler.jar" ]
   node-fetch:
     <<: *default
     build: node/fetch
+    command: [ "node", "main.js" ]
   node-puppeteer:
     <<: *default
     build: node/puppeteer
   node-reqwest:
     <<: *default
     build: node/reqwest
+    command: [ "node", "main.js" ]
   python-aiohttp:
     <<: *default
     build: python/aiohttp

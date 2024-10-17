@@ -11,5 +11,3 @@ FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
 WORKDIR /app
 
 COPY --from=build /app/bin/Release/net8.0 .
-
-CMD ["dotnet", "csharp.dll"]

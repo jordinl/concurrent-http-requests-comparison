@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -u
+
+target=$1
+
+docker compose build $target
+
+cat data/urls.txt | head -n ${LIMIT:-10000000} | docker compose run --rm -T $target | node scripts/process-output.js

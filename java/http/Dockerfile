@@ -74,5 +74,3 @@ FROM eclipse-temurin:22-jre-jammy AS final
 ## Copy the executable from the "package" stage.
 #COPY --from=package build/target/app.jar app.jar
 COPY --from=package build/. .
-#
-CMD [ "java", "-Xmx1G", "Main" ]
