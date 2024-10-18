@@ -20,9 +20,9 @@ services:
     <<: *default
     build: dotnet
     command: [ "dotnet", "dotnet.dll" ]
-  go-http:
+  go:
     <<: *default
-    build: go/http
+    build: go
     command: [ "/bin/run" ]
   java-http:
     <<: *default
