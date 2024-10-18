@@ -1,73 +1,62 @@
-use std::time::{Duration, SystemTime};
-use std::fs::File;
+use futures::prelude::*;
 use std::env;
-use std::io::{self, prelude::*, BufReader};
+use std::error::Error;
+use std::io::{self, prelude::*};
+use std::process;
+use std::str::FromStr;
+use std::time::{Duration};
+use chrono::Utc;
 use reqwest;
 use reqwest::header::USER_AGENT;
 use tokio;
-use futures::prelude::*;
-use std::collections::HashMap;
-use std::error::Error;
-use std::process;
 
-struct Result {
-    code: String,
-    time: u128
-}
-
-
-fn get_env(key: &str, default: u32) -> u32 {
-    env::var(key)
+fn get_env_or<T>(name: &str, default: T) -> T
+where
+    T: FromStr,
+{
+    env::var(name)
         .ok()
-        .and_then(|limit| limit.parse::<u32>().ok())
+        .and_then(|s| s.parse().ok())
         .unwrap_or(default)
 }
 
-async fn handle_response(response: reqwest::Response) -> String {
+async fn handle_response(response: reqwest::Response) -> (String, usize) {
     let code = response.status().as_str().to_string();
     match response.text().await {
-        Ok(body) => {
-            let _ = body.replace("\0", "");
-            code
-        },
+        Ok(body) => (code, body.len()),
         Err(err) => handle_error(err).await,
     }
 }
 
-async fn handle_error(err: impl Error) -> String {
+async fn handle_error(err: impl Error) -> (String, usize) {
     let mut last_err: &dyn Error = &err;
     while let Some(source) = last_err.source() {
         last_err = source;
     }
-    last_err.to_string()
-            .split(":")
-            .collect::<Vec<&str>>()
-            .first()
-            .unwrap()
-            .to_string()
+    let code = last_err.to_string()
+        .split(":")
+        .collect::<Vec<&str>>()
+        .first()
+        .unwrap()
+        .to_string();
+
+    (code, 0)
 }
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    let url_limit = get_env("LIMIT", 1000);
-    let request_timeout = get_env("REQUEST_TIMEOUT", 5);
-    let concurrency = get_env("CONCURRENCY", 10);
-    let data_dir = env::var("DATA_DIR").unwrap_or("./data".to_string());
+    let request_timeout = get_env_or("REQUEST_TIMEOUT", 5);
+    let concurrency = get_env_or("CONCURRENCY", 10);
+    let user_agent = get_env_or("USER_AGENT", "reqwest-fetch".to_string());
 
-    println!("Starting index.:");
-    println!(" * {}: {:?}", "URL_LIMIT", url_limit);
-    println!(" * {}: {:?}", "REQUEST_TIMEOUT", request_timeout);
-    println!(" * {}: {:?}", "CONCURRENCY", concurrency);
+    let stdin = io::stdin();
+    let reader = stdin.lock();
 
-    let time = SystemTime::now();
-
-    let file = File::open(format!("{}/urls.txt", data_dir))?;
-    let reader = BufReader::new(file);
-
-    let results = stream::iter(reader.lines().take(url_limit as usize))
+    stream::iter(reader.lines())
         .map(|line| {
+            let user_agent = user_agent.clone();
             async move {
-                let start = SystemTime::now();
+                let start = Utc::now();
                 let url = line.unwrap();
 
                 let client = reqwest::Client::builder()
@@ -76,52 +65,23 @@ async fn main() -> io::Result<()> {
 
                 let response = client.get(&url)
                     .timeout(Duration::from_secs(request_timeout as u64))
-                    .header(USER_AGENT, "crawler-test")
+                    .header(USER_AGENT, user_agent)
                     .send()
                     .await;
 
-                let time = start.elapsed()
-                                .unwrap()
-                                .as_millis();
-
-                let code = match response {
+                let (code, body_length) = match response {
                     Ok(response) => handle_response(response).await,
                     Err(err) => handle_error(err).await,
                 };
 
-                println!("{}: {} -- {:?}ms", url, code, time);
-                Result { code, time }
+                let duration = (Utc::now() - start).num_milliseconds();
+
+                println!("{},{},{},{},{}", url, code, start.to_rfc3339(), duration, body_length);
             }
         })
         .buffer_unordered(concurrency as usize)
-        .collect::<Vec<Result>>()
+        .collect::<Vec<()>>()
         .await;
-
-
-    let aggregates = results.iter().fold(HashMap::new(), |mut acc, result| {
-        *acc.entry(result.code.clone()).or_insert(0) += 1;
-        acc
-    });
-
-    let mut sorted_aggregates = aggregates.iter().collect::<Vec<(&String, &u32)>>();
-
-    sorted_aggregates.sort_by(|a, b| b.1.cmp(&a.1));
-
-    for (code, count) in &mut sorted_aggregates {
-        println!("{}: {}", code, count);
-    }
-
-    let total_time = time.elapsed().unwrap().as_secs();
-    let total_urls = aggregates.values().sum::<u32>();
-    let mut sorted_times = results.iter().map(|result| result.time).collect::<Vec<u128>>();
-    sorted_times.sort_by(|a, b| b.cmp(a));
-    let avg_time = sorted_times.iter().sum::<u128>() / total_urls as u128;
-    let median_time = sorted_times[sorted_times.len() / 2];
-
-    println!("Total time: {:?}s", total_time);
-    println!("Total URLs: {:?}", total_urls);
-    println!("Average time: {:?}ms", avg_time);
-    println!("Median time: {:?}ms", median_time);
 
     process::exit(0);
 }

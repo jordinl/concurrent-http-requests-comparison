@@ -1,5 +1,6 @@
 x-default: &default
   entrypoint: "timeout ${DURATION:-600}"
+  init: true
   network_mode: host
   environment:
     - CONCURRENCY
@@ -52,3 +53,4 @@ services:
   rust-reqwest:
     <<: *default
     build: rust/reqwest
+    command: ["/bin/run"]
