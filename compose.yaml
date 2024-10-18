@@ -12,9 +12,9 @@ services:
     <<: *default
     build: bun
     command: ["bun", "run", "main.js"]
-  deno-fetch:
+  deno:
     <<: *default
-    build: deno/fetch
+    build: deno
     command: [ "deno", "run", "--allow-env", "--allow-net", "--unstable-http", "main.js" ]
   dotnet:
     <<: *default
