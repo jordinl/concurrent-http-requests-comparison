@@ -1,4 +1,4 @@
-FROM maven:3.9.9-eclipse-temurin-23 AS build
+FROM maven:3.9.9-eclipse-temurin-23-alpine AS build
 
 # Set the working directory
 WORKDIR /app
@@ -16,7 +16,7 @@ COPY src ./src
 RUN mvn package
 
 # Use the official OpenJDK image with version 22 for the runtime
-FROM eclipse-temurin:23-jdk-noble
+FROM eclipse-temurin:23-jdk-alpine
 
 # Set the working directory
 WORKDIR /app
