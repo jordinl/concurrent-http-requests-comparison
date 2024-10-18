@@ -1,6 +1,6 @@
-FROM ruby:3.3
+FROM ruby:3.3-alpine
 
-# throw errors if Gemfile has been modified since Gemfile.lock
+RUN apk add --no-cache build-base
 RUN bundle config --global frozen 1
 
 WORKDIR /app
