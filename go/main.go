@@ -1,7 +1,7 @@
 package main
 
 import (
-  "bufio"
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -12,24 +12,36 @@ import (
 	"time"
 )
 
-var Headers = map[string]string{
-	"User-Agent":      "crawler-test",
-	"Accept-Encoding": "gzip, deflate, br",
-}
-
-func getEnv(key string, fallback int) int {
+func getEnv(key string, fallback string) string {
 	value, exists := os.LookupEnv(key)
 	if !exists {
 		return fallback
 	}
-	intVal, err := strconv.Atoi(value)
+	return value
+}
+
+func getEnvInt(key string, fallback int) int {
+	strValue := getEnv(key, strconv.Itoa(fallback))
+	value, err := strconv.Atoi(strValue)
 	if err != nil {
 		return fallback
 	}
-	return intVal
+	return value
 }
 
-func makeRequest(url string, headers map[string]string, timeout time.Duration) {
+var concurrency = getEnvInt("CONCURRENCY", 10)
+var requestTimeout = getEnvInt("REQUEST_TIMEOUT", 5)
+var userAgent = getEnv("USER_AGENT", "go-http")
+var client = &http.Client{
+	Timeout: time.Duration(requestTimeout) * time.Second,
+}
+
+var Headers = map[string]string{
+	"User-Agent":      userAgent,
+	"Accept-Encoding": "gzip, deflate, br",
+}
+
+func makeRequest(url string) {
 	start := time.Now()
 
 	onComplete := func(code string, rest ...int) {
@@ -41,17 +53,13 @@ func makeRequest(url string, headers map[string]string, timeout time.Duration) {
 		fmt.Printf("%s,%s,%s,%d,%d\n", url, code, start.Format(time.RFC3339), duration, bodyLength)
 	}
 
-	client := &http.Client{
-		Timeout: timeout,
-	}
-
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		onComplete("REQUEST_ERROR")
 		return
 	}
 
-	for key, value := range headers {
+	for key, value := range Headers {
 		req.Header.Set(key, value)
 	}
 
@@ -74,14 +82,10 @@ func makeRequest(url string, headers map[string]string, timeout time.Duration) {
 }
 
 func main() {
-	concurrency := getEnv("CONCURRENCY", 10)
-	requestTimeout := getEnv("REQUEST_TIMEOUT", 5)
-
 	semaphore := make(chan struct{}, concurrency)
-
 	scanner := bufio.NewScanner(os.Stdin)
-
 	var wg sync.WaitGroup
+
 	for scanner.Scan() {
 		url := scanner.Text()
 		semaphore <- struct{}{}
@@ -89,7 +93,7 @@ func main() {
 		go func(url string) {
 			defer wg.Done()
 			defer func() { <-semaphore }()
-			makeRequest(url, Headers, time.Duration(requestTimeout)*time.Second)
+			makeRequest(url)
 		}(url)
 	}
 
