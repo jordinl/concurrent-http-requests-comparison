@@ -11,6 +11,7 @@ services:
   bun-fetch:
     <<: *default
     build: bun/fetch
+    command: ["bun", "run", "main.js"]
   deno-fetch:
     <<: *default
     build: deno/fetch
