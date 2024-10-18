@@ -10,18 +10,18 @@ const headers = {
 
 const makeRequest = async url => {
   const startTime = new Date();
-  let bodyLength = 0;
-  let code;
+
+  const onComplete = (code, bodyLength = 0) => {
+    const duration = new Date() - startTime;
+    console.log(`${url},${code},${startTime.toISOString()},${duration},${bodyLength}`);
+  };
 
   try {
-    const response = await reqwest.fetch(url, {headers, timeout});
-    code = response.status;
-    bodyLength = response.body.length;
+    const { status, body } = await reqwest.fetch(url, {headers, timeout});
+    onComplete(status, body.length);
   } catch (error) {
-    code = error.message;
+    onComplete(error.message);
   }
-  const duration = new Date() - startTime;
-  console.log(`${url},${code},${startTime.toISOString()},${duration},${bodyLength}`);
 };
 
 await PromisePool
