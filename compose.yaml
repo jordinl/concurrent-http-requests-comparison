@@ -8,9 +8,9 @@ x-default: &default
     - USER_AGENT=http-clients-test
 
 services:
-  bun-fetch:
+  bun:
     <<: *default
-    build: bun/fetch
+    build: bun
     command: ["bun", "run", "main.js"]
   deno-fetch:
     <<: *default
