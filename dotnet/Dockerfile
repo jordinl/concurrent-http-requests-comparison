@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
 WORKDIR /app
 
-COPY csharp.csproj .
+COPY dotnet.csproj .
 COPY main.cs .
 
 RUN dotnet restore

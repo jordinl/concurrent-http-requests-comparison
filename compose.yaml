@@ -16,10 +16,10 @@ services:
     <<: *default
     build: deno/fetch
     command: [ "deno", "run", "--allow-env", "--allow-net", "--unstable-http", "main.js" ]
-  csharp:
+  dotnet:
     <<: *default
-    build: csharp
-    command: [ "dotnet", "csharp.dll" ]
+    build: dotnet
+    command: [ "dotnet", "dotnet.dll" ]
   go-http:
     <<: *default
     build: go/http
