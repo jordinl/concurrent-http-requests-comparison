@@ -32,8 +32,12 @@ func getEnvInt(key string, fallback int) int {
 var concurrency = getEnvInt("CONCURRENCY", 10)
 var requestTimeout = getEnvInt("REQUEST_TIMEOUT", 5)
 var userAgent = getEnv("USER_AGENT", "go-http")
+var transport = &http.Transport{
+	DisableKeepAlives: true,
+}
 var client = &http.Client{
 	Timeout: time.Duration(requestTimeout) * time.Second,
+	Transport: transport,
 }
 
 var Headers = map[string]string{
