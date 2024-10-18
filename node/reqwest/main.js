@@ -5,7 +5,7 @@ import {PromisePool} from "@supercharge/promise-pool";
 const CONCURRENCY = parseInt(process.env.CONCURRENCY || 10);
 const timeout = parseInt(process.env.REQUEST_TIMEOUT || 5) * 1000;
 const headers = {
-  "User-Agent": "crawler-test"
+  "User-Agent": process.env.USER_AGENT || "node-reqwest"
 };
 
 const makeRequest = async url => {
