@@ -15,7 +15,7 @@ services:
   deno:
     <<: *default
     build: deno
-    command: [ "deno", "run", "--allow-env", "--allow-net", "--unstable-http", "main.js" ]
+    command: [ "deno", "run", "--allow-env", "--allow-net", "main.js" ]
   dotnet:
     <<: *default
     build: dotnet
