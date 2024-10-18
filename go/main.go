@@ -36,13 +36,12 @@ var transport = &http.Transport{
 	DisableKeepAlives: true,
 }
 var client = &http.Client{
-	Timeout: time.Duration(requestTimeout) * time.Second,
+	Timeout:   time.Duration(requestTimeout) * time.Second,
 	Transport: transport,
 }
 
 var Headers = map[string]string{
-	"User-Agent":      userAgent,
-	"Accept-Encoding": "gzip, deflate, br",
+	"User-Agent": userAgent,
 }
 
 func makeRequest(url string) {
