@@ -20,20 +20,20 @@ const client = Deno.createHttpClient({poolMaxIdlePerHost: 0});
 
 const makeRequest = async url => {
   const startTime = new Date();
-  let code;
-  let bodyLength = 0;
+
+  const onComplete = (code, bodyLength = 0) => {
+    const duration = new Date() - startTime;
+    console.log(`${url},${code},${startTime.toISOString()},${duration},${bodyLength}`);
+  };
 
   try {
     const signal = AbortSignal.timeout(timeout);
     const response = await fetch(url, {headers, signal, client})
     const body = await response.text();
-    code = response.status;
-    bodyLength = body.length;
+    onComplete(response.status, body.length);
   } catch (error) {
-    code = error.cause?.code || error.name;
+    onComplete(error.cause?.code || error.name);
   }
-  const duration = new Date() - startTime;
-  console.log(`${url},${code},${startTime.toISOString()},${duration},${bodyLength}`);
 }
 
 await PromisePool
