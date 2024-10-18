@@ -9,5 +9,3 @@ COPY Gemfile Gemfile.lock ./
 RUN bundle install
 
 COPY . .
-
-CMD ["ruby", "main.rb"]
