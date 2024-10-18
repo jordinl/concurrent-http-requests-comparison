@@ -5,6 +5,7 @@ WORKDIR /src
 ARG TARGETARCH
 
 ENV GOCACHE=/go/cache
+ENV GODEBUG="http2client=0"
 
 RUN --mount=type=cache,target=/go/cache \
     --mount=type=bind,target=. \
