@@ -6,16 +6,6 @@ const headers = {
   'User-Agent': Deno.env.get('USER_AGENT') || 'deno-fetch',
 }
 
-const urls = (async function* () {
-  const readable = Deno.stdin.readable
-    .pipeThrough(new TextDecoderStream())
-    .pipeThrough(new TextLineStream());
-
-  for await (const line of readable) {
-    yield line;
-  }
-})();
-
 const client = Deno.createHttpClient({poolMaxIdlePerHost: 0});
 
 const makeRequest = async url => {
@@ -35,6 +25,10 @@ const makeRequest = async url => {
     onComplete(error.cause?.code || error.name);
   }
 }
+
+const urls = Deno.stdin.readable
+  .pipeThrough(new TextDecoderStream())
+  .pipeThrough(new TextLineStream());
 
 await PromisePool
   .for(urls)
