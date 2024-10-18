@@ -18,8 +18,7 @@ const makeRequest = async url => {
     code = response.status;
     bodyLength = response.body.length;
   } catch (error) {
-    const time = Date.now() - start
-    code = error.message
+    code = error.message;
   }
   const duration = new Date() - startTime;
   console.log(`${url},${code},${startTime.toISOString()},${duration},${bodyLength}`);
