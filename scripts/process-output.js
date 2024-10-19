@@ -39,13 +39,15 @@ const startTime = Math.min(...results.map(r => r.startTime));
 const endTime = Math.max(...results.map(r => r.startTime + r.duration));
 const totalTime = endTime - startTime;
 const sumBodyLength = results.reduce((agg, r) => agg + (r.code[0] === "2" ? r.bodyLength : 0), 0);
+const totalUrls = Object.values(counts).reduce((agg, count) => agg + count, 0);
 
 const aggregates = {
   totalTime,
   avgDuration: Math.round(avgDuration),
   maxDuration,
-  totalUrls: Object.values(counts).reduce((agg, count) => agg + count, 0),
+  totalUrls,
   okReqsSecond: Math.round(counts["2xx"] / totalTime * 1000),
+  okReqsPct: counts["2xx"] / totalUrls,
   avgBodyLength: Math.round(sumBodyLength / counts["2xx"]),
   ...counts
 };
