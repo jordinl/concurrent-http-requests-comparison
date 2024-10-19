@@ -1,10 +1,10 @@
-import {TextLineStream, PromisePool} from './deps.js';
+import {TextLineStream, PromisePool} from "./deps.js";
 
-const CONCURRENCY = parseInt(Deno.env.get('CONCURRENCY') || 10);
-const timeout = parseInt(Deno.env.get('REQUEST_TIMEOUT') || 5) * 1000;
+const CONCURRENCY = parseInt(Deno.env.get("CONCURRENCY") || 10);
+const timeout = parseInt(Deno.env.get("REQUEST_TIMEOUT") || 5) * 1000;
 const headers = {
-  'User-Agent': Deno.env.get('USER_AGENT') || 'deno-fetch',
-}
+  "User-Agent": Deno.env.get("USER_AGENT") || "deno-fetch",
+};
 
 const client = Deno.createHttpClient({poolMaxIdlePerHost: 0});
 
@@ -18,13 +18,13 @@ const makeRequest = async url => {
 
   try {
     const signal = AbortSignal.timeout(timeout);
-    const response = await fetch(url, {headers, signal, client})
+    const response = await fetch(url, {headers, signal, client});
     const body = await response.text();
     onComplete(response.status, body.length);
   } catch (error) {
     onComplete(error.cause?.code || error.name);
   }
-}
+};
 
 const urls = Deno.stdin.readable
   .pipeThrough(new TextDecoderStream())
