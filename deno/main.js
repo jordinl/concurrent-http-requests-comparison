@@ -22,7 +22,8 @@ const makeRequest = async url => {
     const body = await response.text();
     onComplete(response.status, body.length);
   } catch (error) {
-    onComplete(error.cause?.code || error.name);
+    const messageParts = (error.message || error).split(": ").filter(u => !u.match(/https?:\/\//));
+    onComplete(messageParts[1] || messageParts[0]);
   }
 };
 
