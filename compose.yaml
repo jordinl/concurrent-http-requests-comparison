@@ -39,6 +39,10 @@ services:
   node-puppeteer:
     <<: *default
     build: node/puppeteer
+  node-undici-request:
+    <<: *default
+    build: node/undici-request
+    command: [ "node", "main.js" ]
   node-reqwest:
     <<: *default
     build: node/reqwest
