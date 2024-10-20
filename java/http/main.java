@@ -25,7 +25,6 @@ class Main {
     return HttpRequest.newBuilder()
       .uri(URI.create(url))
       .header("User-Agent", UserAgent)
-      .header("Accept-Encoding", "gzip, deflate, br")
       .GET()
       .build();
   }
