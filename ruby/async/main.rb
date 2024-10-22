@@ -11,7 +11,6 @@ USER_AGENT = ENV.fetch('USER_AGENT', 'ruby-async-http')
 
 HEADERS = {
   'user-agent' => USER_AGENT,
-  'accept-encoding' => 'gzip, deflate, br'
 }.freeze
 
 def make_request(url)
