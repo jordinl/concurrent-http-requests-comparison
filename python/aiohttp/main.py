@@ -9,8 +9,7 @@ REQUEST_TIMEOUT = int(os.environ.get('REQUEST_TIMEOUT', 5))
 USER_AGENT = os.environ.get('USER_AGENT', 'python-aiohttp')
 
 headers = {
-    'User-Agent': USER_AGENT,
-    'Accept-Encoding': 'gzip, deflate, br'
+    'User-Agent': USER_AGENT
 }
 
 semaphore = asyncio.Semaphore(CONCURRENCY)
