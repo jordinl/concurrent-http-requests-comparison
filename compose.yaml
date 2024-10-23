@@ -24,9 +24,9 @@ services:
     <<: *default
     build: go
     command: [ "/bin/run" ]
-  java-http:
+  java:
     <<: *default
-    build: java/http
+    build: java
     command: [ "java", "-Xmx1G", "Main" ]
   kotlin:
     <<: *default

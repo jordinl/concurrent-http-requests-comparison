@@ -10,7 +10,7 @@
 **/.env
 **/.factorypath
 **/.git
-**/.gitignore
+http/.idea/.gitignore
 **/.idea
 **/.project
 **/.sts4-cache
