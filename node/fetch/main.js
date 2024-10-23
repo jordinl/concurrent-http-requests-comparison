@@ -5,7 +5,6 @@ const CONCURRENCY = parseInt(process.env.CONCURRENCY || 10);
 const REQUEST_TIMEOUT = parseInt(process.env.REQUEST_TIMEOUT || 5);
 const headers = {
   "User-Agent": process.env.USER_AGENT || "node-fetch",
-  "Accept-Encoding": "gzip, deflate, br"
 };
 
 const makeRequest = async url => {
