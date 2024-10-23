@@ -5,6 +5,7 @@ class Program
   private static readonly int Concurrency = int.Parse(Environment.GetEnvironmentVariable("CONCURRENCY") ?? "10");
   private const int TimeoutSeconds = 5;
   private static readonly ParallelOptions ParallelOptions = new () { MaxDegreeOfParallelism = Concurrency };
+  private static readonly string UserAgent = Environment.GetEnvironmentVariable("USER_AGENT") ?? "dotnet-http-client";
 
   private static IEnumerable<string> ReadUrls()
   {
@@ -20,7 +21,7 @@ class Program
 
   static async Task Main()
   {
-    HttpClient.DefaultRequestHeaders.Add("User-Agent", "crawler-test");
+    HttpClient.DefaultRequestHeaders.Add("User-Agent", UserAgent);
 
     var urls = ReadUrls();
 
