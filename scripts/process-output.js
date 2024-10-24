@@ -8,6 +8,8 @@ const colors = {
   "reset": "\x1b[0m",
 };
 
+const FORMAT = process.env.FORMAT;
+
 const print = (message, color = "white") => {
   console.log(`${colors[color]}${message}${colors.reset}`);
 };
@@ -19,8 +21,10 @@ for await (const line of createInterface({input: process.stdin})) {
   const startTime = Date.parse(startTimeStr);
   const duration = parseInt(durationStr);
   const bodyLength = parseInt(bodyLengthStr);
-  const color = code[0] === "2" ? "green" : (code.match(/^[0-9]{3}$/) ? "yellow" : "red");
-  print(`[${code}] ${url}: ${duration}ms`, color);
+  if (FORMAT !== "result") {
+    const color = code[0] === "2" ? "green" : (code.match(/^[0-9]{3}$/) ? "yellow" : "red");
+    print(`[${code}] ${url}: ${duration}ms`, color);
+  }
 
   results.push({code, startTime, duration, bodyLength});
 }
@@ -33,8 +37,8 @@ const counts = results.reduce((agg, {code}) => {
   const shortCode = code.match(/^[0-9]{3}$/) ? `${code[0]}xx` : "Exception";
   return {...agg, [shortCode]: agg[shortCode] + 1};
 }, defaultCounts);
-const avgDuration = results.reduce((agg, r) => agg + r.duration, 0) / results.length;
-const maxDuration = Math.max(...results.map(r => r.duration));
+const avg = results.reduce((agg, r) => agg + r.duration, 0) / results.length;
+const max = Math.max(...results.map(r => r.duration));
 const startTime = Math.min(...results.map(r => r.startTime));
 const endTime = Math.max(...results.map(r => r.startTime + r.duration));
 const totalTime = endTime - startTime;
@@ -42,14 +46,14 @@ const sumBodyLength = results.reduce((agg, r) => agg + (r.code[0] === "2" ? r.bo
 const totalUrls = Object.values(counts).reduce((agg, count) => agg + count, 0);
 
 const aggregates = {
-  totalTime,
-  avgDuration: Math.round(avgDuration),
-  maxDuration,
   totalUrls,
-  okReqsSecond: Math.round(counts["2xx"] / totalTime * 1000),
-  okReqsPct: counts["2xx"] / totalUrls,
+  time: totalTime,
+  avg: Math.round(avg),
+  max,
+  okReqsSec: Math.round(counts["2xx"] / totalTime * 1000),
+  okReqsPct: Math.round(100 * counts["2xx"] / totalUrls) / 100,
   avgBodyLength: Math.round(sumBodyLength / counts["2xx"]),
   ...counts
 };
 
-console.log(aggregates);
+console.log(JSON.stringify(aggregates, null, 2));

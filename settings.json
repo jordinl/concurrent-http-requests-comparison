@@ -1,0 +1,62 @@
+[
+  {
+    "name": "deno",
+    "language": "Deno",
+    "method": "fetch",
+    "concurrency": 150
+  },
+  {
+    "name": "dotnet",
+    "language": ".NET",
+    "method": "HttpClient",
+    "concurrency": 75
+  },
+  {
+    "name": "go",
+    "language": "Go",
+    "method": "net/http",
+    "concurrency": 125
+  },
+  {
+    "name": "java",
+    "language": "Java",
+    "method": "HttpClient",
+    "concurrency": 50
+  },
+  {
+    "name": "node-fetch",
+    "language": "Node.js",
+    "method": "fetch",
+    "concurrency": 50
+  },
+  {
+    "name": "node-reqwest",
+    "language": "Node.js",
+    "method": "reqwest (Rust)",
+    "concurrency": 125
+  },
+  {
+    "name": "node-undici-request",
+    "language": "Node.js",
+    "method": "undici request",
+    "concurrency": 50
+  },
+  {
+    "name": "python-aiohttp",
+    "language": "Python",
+    "method": "aiohttp",
+    "concurrency": 75
+  },
+  {
+    "name": "ruby-async",
+    "language": "Ruby",
+    "method": "async + http.rb",
+    "concurrency": 75
+  },
+  {
+    "name": "rust-reqwest",
+    "language": "Rust",
+    "method": "reqwest",
+    "concurrency": 150
+  }
+]
