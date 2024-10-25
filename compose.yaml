@@ -10,48 +10,48 @@ x-default: &default
 services:
   bun:
     <<: *default
-    build: bun
+    build: lib/bun
     command: ["bun", "run", "main.js"]
   deno:
     <<: *default
-    build: deno
+    build: lib/deno
     command: [ "deno", "run", "--allow-env", "--allow-net", "main.js" ]
   dotnet:
     <<: *default
-    build: dotnet
+    build: lib/dotnet
     command: [ "dotnet", "dotnet.dll" ]
   go:
     <<: *default
-    build: go
+    build: lib/go
     command: [ "/bin/run" ]
   java:
     <<: *default
-    build: java
+    build: lib/java
     command: [ "java", "-Xmx1G", "Main" ]
   node-fetch:
     <<: *default
-    build: node/fetch
+    build: lib/node/fetch
     command: [ "node", "main.js" ]
   node-puppeteer:
     <<: *default
-    build: node/puppeteer
+    build: lib/node/puppeteer
   node-undici-request:
     <<: *default
-    build: node/undici-request
+    build: lib/node/undici-request
     command: [ "node", "main.js" ]
   node-reqwest:
     <<: *default
-    build: node/reqwest
+    build: lib/node/reqwest
     command: [ "node", "main.js" ]
   python-aiohttp:
     <<: *default
-    build: python/aiohttp
+    build: lib/python/aiohttp
     command: [ "python", "main.py" ]
   ruby-async:
     <<: *default
-    build: ruby/async
+    build: lib/ruby/async
     command: [ "ruby", "main.rb" ]
   rust-reqwest:
     <<: *default
-    build: rust/reqwest
+    build: lib/rust/reqwest
     command: ["/bin/run"]
