@@ -5,7 +5,7 @@ set -u
 target=$1
 
 docker compose build "$target" --quiet
-bin/build-scripts
+bin/prepare
 
 command="cat data/urls.txt | head -n ${LIMIT:-10000000} | docker compose run --rm -T $target"
 

@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
+if [ ! -f data/urls.txt ]; then
+  bin/fetch-urls
+fi
+
 docker build scripts --quiet --output=.
