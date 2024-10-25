@@ -28,10 +28,6 @@ services:
     <<: *default
     build: java
     command: [ "java", "-Xmx1G", "Main" ]
-  kotlin:
-    <<: *default
-    build: kotlin
-    command: [ "java", "-Xmx1G", "-jar", "crawler.jar" ]
   node-fetch:
     <<: *default
     build: node/fetch
