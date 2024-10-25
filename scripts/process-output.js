@@ -1,18 +1,6 @@
 import {createInterface} from "node:readline";
 
-const colors = {
-  "red": "\x1b[31m",
-  "green": "\x1b[32m",
-  "yellow": "\x1b[33m",
-  "white": "\x1b[37m",
-  "reset": "\x1b[0m",
-};
-
-const FORMAT = process.env.FORMAT;
-
-const print = (message, color = "white") => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
-};
+const FORMAT = Deno.env.get("FORMAT");
 
 let results = [];
 
@@ -23,7 +11,7 @@ for await (const line of createInterface({input: process.stdin})) {
   const bodyLength = parseInt(bodyLengthStr);
   if (FORMAT !== "result") {
     const color = code[0] === "2" ? "green" : (code.match(/^[0-9]{3}$/) ? "yellow" : "red");
-    print(`[${code}] ${url}: ${duration}ms`, color);
+    console.log(`%c[${code}] ${url}: ${duration}ms`, `color: ${color}`);
   }
 
   results.push({code, startTime, duration, bodyLength});

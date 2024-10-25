@@ -7,3 +7,5 @@ data/
 */target
 dotnet/bin
 dotnet/obj
+build/
+!build/.gitkeep
