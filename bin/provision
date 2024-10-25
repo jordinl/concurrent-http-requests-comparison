@@ -6,8 +6,8 @@ ssh -T -o StrictHostKeyChecking=no "$credentials" << EOF
     curl -fsSL https://get.docker.com | bash
     sudo usermod -aG docker \${USER}
 
-    mkdir test
-    cd test
+    mkdir repo
+    cd repo
 
     git config --global init.defaultBranch main
     git config --global receive.denyCurrentBranch updateInstead
@@ -15,4 +15,5 @@ ssh -T -o StrictHostKeyChecking=no "$credentials" << EOF
 EOF
 
 git remote remove server
-git remote add server "$credentials:test"
+git remote add server "$credentials:repo"
+git push server
