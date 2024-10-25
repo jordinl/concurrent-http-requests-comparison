@@ -17,6 +17,4 @@ EOF
 git remote remove server
 git remote add server "$credentials:test"
 
-./bin/deploy
-
 bin/ssh "bin/fetch-urls"
