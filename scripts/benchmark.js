@@ -11,9 +11,10 @@ for (const entry of settings) {
   const command = new Deno.Command('./bin/run', { args: [name], env: { FORMAT: "result", CONCURRENCY: concurrency.toString() } });
   const { code, stdout, stderr } = await command.outputSync();
   if (code === 0) {
-    const output = JSON.parse(new TextDecoder().decode(stdout));
+    const output = new TextDecoder().decode(stdout);
     console.log(output);
-    results.push({ language, method, concurrency, ...output });
+    const aggregates = JSON.parse(output);
+    results.push({ language, method, concurrency, ...aggregates });
   } else {
     console.log(new TextDecoder().decode(stderr));
   }
