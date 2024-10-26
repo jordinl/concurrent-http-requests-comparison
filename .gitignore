@@ -5,6 +5,5 @@ tmp/
 */crawl
 data/
 */target
-dotnet/bin
-dotnet/obj
 build/
+out/

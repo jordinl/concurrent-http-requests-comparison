@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+file="out/results-$(date -u +"%Y-%m-%dT%H:%M:%SZ").txt"
+mkdir -p out
+{ time bin/benchmark; } &> "$file" &
+ln -sf "$PWD/$file" out/results.txt
+echo "Benchmark started. Saving results to $file"
