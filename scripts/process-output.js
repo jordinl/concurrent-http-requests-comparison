@@ -40,7 +40,7 @@ const aggregates = {
   max,
   okReqsSec: Math.round(counts["2xx"] / totalTime * 1000),
   okReqsPct: Math.round(100 * counts["2xx"] / totalUrls) / 100,
-  avgBodyLength: Math.round(sumBodyLength / counts["2xx"]),
+  avgBodyLen: Math.round(sumBodyLength / counts["2xx"]),
   ...counts
 };
 

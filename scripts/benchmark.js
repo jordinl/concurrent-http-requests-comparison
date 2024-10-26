@@ -5,7 +5,7 @@ const settings = JSON.parse(readFileSync('settings.json', 'utf8'));
 let results = []
 
 for (const entry of settings) {
-  const { name, concurrency} = entry;
+  const { name, concurrency, language, method } = entry;
   console.log(`Running ${name} with concurrency ${concurrency}`);
 
   const command = new Deno.Command('./bin/run', { args: [name], env: { FORMAT: "result", CONCURRENCY: concurrency.toString() } });
@@ -13,7 +13,7 @@ for (const entry of settings) {
   if (code === 0) {
     const output = JSON.parse(new TextDecoder().decode(stdout));
     console.log(output);
-    results.push({ name, concurrency, ...output });
+    results.push({ language, method, concurrency, ...output });
   } else {
     console.log(new TextDecoder().decode(stderr));
   }
