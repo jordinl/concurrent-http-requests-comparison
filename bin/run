@@ -7,7 +7,11 @@ target=$1
 docker compose build "$target" --quiet
 bin/prepare
 
-command="cat data/urls.txt | head -n ${LIMIT:-10000000} | docker compose run --rm -T $target"
+command="docker compose run --rm -T $target"
+
+if [[ ! -p /dev/stdin ]]; then
+  command="cat data/urls.txt | head -n ${LIMIT:-10000000} | $command";
+fi
 
 if [[ "${FORMAT:-}" != "plain" ]]; then
   command+=" | build/process-output"

@@ -38,6 +38,7 @@ for (const entry of settings) {
 
   const command = new Deno.Command("./bin/run", {
     args: [name],
+    stdin: "inherit",
     env: {FORMAT: "result", CONCURRENCY: concurrency.toString()}
   });
   const {code, stdout, stderr} = await command.outputSync();
