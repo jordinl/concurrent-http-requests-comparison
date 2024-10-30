@@ -4,6 +4,21 @@
 
 Benchmark of doing concurrent HTTP requests in different languages and runtimes. The goal is to test how much concurrency is possible and how long it takes to fetch a given number of URLs. I've read some opinions saying that the language should not matter, but clearly there are significant differences between languages, the slowest takes 4x longer than the fastest.
 
+## Architecture
+
+Each language or runtime runs in a docker container, these live under [lib](lib). The docker service should read a list of URLs from stdin, fetch them concurrently based on the `CONCURRENCY` environment variable and print each response to stdout formatted as `$url,$code,$start_time,$duration,$body_length`. These results will be piped to a script that will then pretty print them and aggregate them. The list of URLs comes from the [Top 10 million domains](https://www.domcop.com/top-10-million-domains), which is downloaded and stored in the `data` directory.
+
+To make things consistent they are all set up the following way:
+* Use docker alpine images.
+* Request timeout is passed via the `REQUEST_TIMEOUT` environment variable, which defaults to 5 seconds.
+* User agent is passed via the `USER_AGENT` environment variable.
+* Redirects should be followed. .NET does not automatically follow https to http redirects and there's no way to disable this other than manually following them, so the results will show more redirects for .NET.
+
+## Gotchas
+
+* The most common gotcha is with timeouts. Some HTTP clients have trouble cancelling requests after the configured timeout of 5 seconds. [edwardsnowden.com](https://edwardsnowden.com) or [home.comcast.com](https://home.comcast.com) seem to cause issues.
+* Redirect handling. Redirects are handled differently in different HTTP clients, most allow following https to http redirects. In Java you need to explicitly allow it. And .NET does not allow them nor there is way to allow it.
+
 ## Languages / runtimes
 
 ### Bun
@@ -46,16 +61,6 @@ Benchmark of doing concurrent HTTP requests in different languages and runtimes.
 ### Rust
 
 [lib/rust/reqwest/src/main.rs](lib/rust/reqwest/src/main.rs): Use [reqwest](https://docs.rs/reqwest/latest/reqwest/). This requires installing a few third party dependencies: reqwest, tokio and futures. It wasn't that difficult to get it working and I find the code to be more readable than go. It's the best performing.
-
-## Architecture
-
-Each language or runtime runs in a docker container, these live under [lib](lib). The docker service should read a list of URLs from stdin, fetch them concurrently based on the `CONCURRENCY` environment variable and print each response to stdout formatted as `$url,$code,$start_time,$duration,$body_length`. These results will be piped to a script that will then pretty print them and aggregate them.
-
-To make things consistent they are all set up the following way:
-* Use docker alpine images.
-* Request timeout is passed via the `REQUEST_TIMEOUT` environment variable, which defaults to 5 seconds.
-* User agent is passed via the `USER_AGENT` environment variable.
-* Redirects should be followed. .NET does not automatically follow https to http redirects and there's no way to disable this other than manually following them, so the results will show more redirects for .NET.
 
 ## Requirements
 
