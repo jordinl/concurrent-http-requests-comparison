@@ -1,3 +1,9 @@
+# Comparing concurrent HTTP requests in different languages
+
+## Description
+
+Benchmark of doing concurrent HTTP requests in different languages and runtimes. The goal is to test how much concurrency is possible and how long it takes to fetch a given number of URLs. I've read some opinions saying that the language should not matter, but clearly there are significant differences between languages.
+
 ## Languages / runtimes
 
 ### Bun
@@ -32,15 +38,56 @@
 
 ### Ruby
 
-
 [lib/ruby/async/main.rb](lib/ruby/async/main.rb): Use [async](https://github.com/socketry/async) with [http.rb](https://github.com/httprb/http), there's no built-in way of doing this with Ruby. Wasn't expecting much from Ruby, considering many people keep saying it's slow, but in this case it performed like .NET and faster than Node.js and Java. The default HTTP client provided by `async` does not automatically follow redirects, so I had to use `http.rb`. Tried a few other options that can handle parallel requests, but they were slower:
 * [faraday](https://github.com/lostisland/faraday) with `hydra`.
 * [async-http-faraday](https://github.com/socketry/async-http-faraday): this is a faraday adapter provided by `async`.
 * [curb](https://github.com/taf2/curb) with `async`.
-  
+
 ### Rust
 
 [lib/rust/reqwest/src/main.rs](lib/rust/reqwest/src/main.rs): Use [reqwest](https://docs.rs/reqwest/latest/reqwest/). This requires installing a few third party dependencies: reqwest, tokio and futures. It wasn't that difficult to get it working and I find the code to be more readable than go. It's the best performing.
+
+## Architecture
+
+Each language or runtime runs in a docker container, these live under [lib](lib). The docker service should read a list of URLs from stdin, fetch them concurrently based on the `CONCURRENCY` environment variable and print the execution results to stdout formatted as `$url,$code,$start_time,$duration,$body_length`. These results will be piped to a script that will then pretty print them and aggregate them.
+
+To make things consistent they are all set up the following way:
+* Use docker alpine images.
+* Request timeout is passed via the `REQUEST_TIMEOUT` environment variable, which defaults to 5 seconds.
+* User agent is passed via the `USER_AGENT` environment variable.
+* Redirects should be followed. .NET does not automatically follow https to http redirects and there's no way to disable this other than manually following them, so the results will show more redirects for .NET.
+
+## Requirements
+
+* docker
+* Some scripts use unix commands such as: `curl`, `awk`, `head`, `tail`, `grep`.
+
+There's a `bin/provision` script that I use to SSH into a given Ubuntu machine, install docker and set up a remote repo. It requires SSH access to the remote machine and can be called with `bin/provision $user@$host`. This will also set the `server` remote locally.
+
+After that, `bin/ssh` can be used to SSH into the remote machine.
+
+## Execution
+
+### bin/run $target
+
+`bin/run $target` will read urls from `data/urls.txt`, fetch them concurrently and pretty print the results for the given target. The list of targets can be found in [compose.yml](compose.yml).
+
+The following environment variables can be used to configure the benchmark:
+
+* `CONCURRENCY`: The number of concurrent requests to make. Default is 10.
+* `LIMIT`: The number of urls to fetch. Default is all.
+* `DURATION`: The duration of the benchmark in seconds. Default is 600.
+* `FORMAT`: Pretty print can be disabled by setting this to `plain`.
+
+`bin/run` also accepts piping a list of urls to it, e.g.: `cat /path/to/some/urls.txt | bin/run $target` or `echo "https://edwardsnowden.com" | bin/run $target`.
+
+### bin/benchmark
+
+`bin/benchmark` will run `bin/run $target` for all targets with the given concurrency configured in [settings.json](settings.json). The number of URLs can be configured with `LIMIT` and the duration with `DURATION` environment variables. It will print the results formatted as a table.
+
+There's also `bin/trigger-benchmark` to generate the report in the background. The results will be saved to `out/results.txt`. I use it with `LIMIT=10000` to generate the report.
+
+I don't recommend to run this at home.
 
 ## Results
 
