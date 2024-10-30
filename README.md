@@ -107,7 +107,7 @@ There's also `bin/trigger-benchmark` to generate the report in the background an
 > Times are in milliseconds.
 
 > [!WARNING]  
-> I think the implementations are good for all languages, but it's possible I've made mistakes that could make some of these slower.
+> I think the implementations are good for all languages, but it's possible there are ways of making some of these faster.
 
 
 ```
