@@ -1,4 +1,4 @@
-# Comparing concurrent HTTP requests in different languages
+# Comparing performance of concurrent HTTP requests in different languages
 
 ## Description
 
