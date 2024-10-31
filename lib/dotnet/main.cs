@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 class Program
 {
   private static readonly SocketsHttpHandler HttpHandler = new() { PooledConnectionLifetime = TimeSpan.Zero };
@@ -28,6 +30,7 @@ class Program
     await Parallel.ForEachAsync(urls, ParallelOptions, async (url, cancellationToken) =>
     {
       var start = DateTime.Now;
+      var stopwatch = Stopwatch.StartNew();
       string code;
       var bodyLength = 0;
       try
@@ -46,7 +49,8 @@ class Program
       {
         code = (ex.InnerException ?? ex).GetType().Name;
       }
-      var duration = (int)(DateTime.Now - start).TotalMilliseconds;
+      stopwatch.Stop();
+      var duration = stopwatch.ElapsedMilliseconds;
       Console.WriteLine($"{url},{code},{start:s},{duration},{bodyLength}");
     });
   }
