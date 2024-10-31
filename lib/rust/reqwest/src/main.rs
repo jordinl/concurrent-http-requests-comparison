@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::time::{Duration};
 use chrono::Utc;
 use reqwest;
-use reqwest::header::USER_AGENT;
+use reqwest::header::{HeaderMap, USER_AGENT};
 use tokio;
 
 fn get_env_or<T>(name: &str, default: T) -> T
@@ -48,24 +48,25 @@ async fn main() -> io::Result<()> {
     let request_timeout = get_env_or("REQUEST_TIMEOUT", 5);
     let concurrency = get_env_or("CONCURRENCY", 10);
     let user_agent = get_env_or("USER_AGENT", "reqwest-fetch".to_string());
-
     let stdin = io::stdin();
     let reader = stdin.lock();
+    let mut default_headers = HeaderMap::new();
+    default_headers.insert(USER_AGENT, user_agent.parse().unwrap());
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(request_timeout as u64))
+        .default_headers(default_headers)
+        .build()
+        .unwrap();
 
     stream::iter(reader.lines())
         .map(|line| {
-            let user_agent = user_agent.clone();
+            let client = client.clone();
             async move {
                 let start = Utc::now();
                 let url = line.unwrap();
 
-                let client = reqwest::Client::builder()
-                    .build()
-                    .unwrap();
-
                 let response = client.get(&url)
-                    .timeout(Duration::from_secs(request_timeout as u64))
-                    .header(USER_AGENT, user_agent)
                     .send()
                     .await;
 
